@@ -470,12 +470,13 @@ class TestCUPEDNumerics:
         )
         assert abs(cuped_ate - dim_ate) < 0.1
 
-    def test_equivalence_with_simple_regression(self) -> None:
-        """CUPED with one covariate is mathematically equivalent to
-        OLS of Y on [1, T, X_pre] without interaction. The coefficient
-        of T from that regression must equal CUPED.ate_ to within
-        rel=1e-10.
-
+    def test_consistency_with_simple_regression(self) -> None:
+        """CUPED with one covariate is asymptotically equivalent to
+        OLS of Y on [1, T, X_pre] without interaction. In finite
+        samples, the two estimators differ by O(1/n) due to
+        sample-level correlation between T and X_pre, but should
+        agree within loose tolerance.
+    
         Note: this equivalence does NOT hold for LinEstimator, which
         adds the interaction term T * X_centered.
         """
@@ -485,7 +486,7 @@ class TestCUPEDNumerics:
         estimator = CUPED(
             outcome_col="y", pre_experiment_col="y_pre"
         ).fit(assignment)
-
+    
         data = assignment.data_
         y = data["y"].values.astype(float)
         x = data["y_pre"].values.astype(float).reshape(-1, 1)
@@ -494,17 +495,15 @@ class TestCUPEDNumerics:
             .values.astype(float)
             .reshape(-1, 1)
         )
-
+    
         n = len(y)
         intercept = np.ones((n, 1))
-        # No interaction term, no centering needed for OLS coefficient
-        # of T to match CUPED (in the limit; in finite sample, this
-        # is also exact when both methods use the same data).
         design_matrix = np.hstack([intercept, T, x])
         coef, *_ = np.linalg.lstsq(design_matrix, y, rcond=None)
-        # coef[1] is the T coefficient.
-
-        assert estimator.ate_ == pytest.approx(float(coef[1]), rel=1e-10)
+    
+        # CUPED and OLS without interaction agree asymptotically;
+        # in finite samples, they differ by O(1/n).
+        assert estimator.ate_ == pytest.approx(float(coef[1]), abs=0.05)
 
     def test_theta_magnitude_with_known_correlation(self) -> None:
         """With correlation=0.7 and unit variances, theta_ ~ 0.7

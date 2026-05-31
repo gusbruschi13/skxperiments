@@ -4,6 +4,7 @@ FactorialEstimator -> Results.
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from skxperiments.core.results import Results
 from skxperiments.design.factorial import FactorialDesign
@@ -33,8 +34,12 @@ class TestFactorialDesigntoFactorialEstimator:
         assignment = design.randomize(df)
 
         # Inject true effects: tau_A = 1.0, tau_B = 0.5; no interaction.
+        # Injection per unit must be divided by 2**(K-1) to match the
+        # estimator's contrast normalization.
         injected = {("A",): 1.0, ("B",): 0.5}
         factor_cols = ["A", "B"]
+        K = len(factor_cols)
+        normalization = 2 ** (K - 1)
         for subset, magnitude in injected.items():
             subset_indices = [factor_cols.index(f) for f in subset]
             for unit_iloc in range(n_total):
@@ -46,7 +51,7 @@ class TestFactorialDesigntoFactorialEstimator:
                 assignment.data_.iat[
                     unit_iloc,
                     assignment.data_.columns.get_loc("y"),
-                ] += sign * magnitude
+                ] += sign * magnitude / normalization
 
         estimator = FactorialEstimator(outcome_col="y")
         result = estimator.fit(assignment).estimate()
@@ -73,10 +78,6 @@ class TestFactorialDesigntoFactorialEstimator:
         assert result.inference_name is None
 
         # Recovered effects within tolerance (no noise injected -> exact).
-        assert result.effects[("A",)] == 1.0 + pytest.approx(0.0, abs=1e-6)
-        assert result.effects[("B",)] == 0.5 + pytest.approx(0.0, abs=1e-6)
+        assert result.effects[("A",)] == pytest.approx(1.0, abs=1e-6)
+        assert result.effects[("B",)] == pytest.approx(0.5, abs=1e-6)
         assert result.effects[("A", "B")] == pytest.approx(0.0, abs=1e-6)
-
-
-# pytest is imported lazily for the module-level approx helper.
-import pytest  # noqa: E402

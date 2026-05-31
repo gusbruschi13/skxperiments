@@ -107,14 +107,13 @@ class TestPowerAnalysisResolveN:
 
     def test_classical_reference_value(self) -> None:
         """Sanity check: std=1, mde=0.2, power=0.8, alpha=0.05,
-        allocation=0.5 must yield n_total close to 394 (classical
-        textbook value).
+        allocation=0.5 must yield n_total close to 784 (classical
+        textbook value: ~392 per group, ~784 total).
         """
         result = power_analysis(
             mde=0.2, power=0.8, std=1.0, alpha=0.05, allocation=0.5
         )
-        # The closed-form value is ~393.4; with ceil, ~394.
-        assert 392 <= result.n_total <= 396
+        assert 782 <= result.n_total <= 786
 
     def test_allocation_counts_sum_exactly(self) -> None:
         """n_treated + n_control must equal n_total exactly."""

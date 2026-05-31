@@ -35,9 +35,13 @@ def _make_factorial_assignment(
     """Build a FactorialAssignment whose outcome embeds known effects.
 
     For each subset in ``effect_map``, injects an additive contribution
-    to the outcome of every unit, signed by the standard factorial
-    contrast. With ``n_per_cell`` units per cell and no noise, recovery
-    is exact.
+    to the outcome of every unit. The injection per unit is
+    ``magnitude * sign(cell, subset) / 2**(K-1)``, which compensates
+    the estimator's normalization by ``1/2**(K-1)`` so that the
+    recovered effect equals exactly ``magnitude``.
+
+    With ``n_per_cell`` units per cell and no noise, recovery is exact
+    (within floating-point tolerance).
 
     # Injeção aditiva de efeitos no outcome — aceitável apenas em
     # fixture de teste.
@@ -61,8 +65,7 @@ def _make_factorial_assignment(
     assignment = design.randomize(df)
 
     if effect_map:
-        # Inject each effect additively using the same contrast sign
-        # convention as the estimator.
+        normalization = 2 ** (K - 1)
         for subset, magnitude in effect_map.items():
             subset_indices = [factors.index(f) for f in subset]
             for unit_iloc in range(n_total):
@@ -74,7 +77,7 @@ def _make_factorial_assignment(
                 assignment.data_.iat[
                     unit_iloc,
                     assignment.data_.columns.get_loc("y"),
-                ] += sign * magnitude
+                ] += sign * magnitude / normalization
 
     return assignment
 
