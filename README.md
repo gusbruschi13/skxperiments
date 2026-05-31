@@ -3,7 +3,17 @@
 > Randomization-based experimental design and causal inference, sklearn-style.
 
 ![CI](https://github.com/username/skxperiments/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-TBD-yellow)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![Status](https://img.shields.io/badge/status-alpha-orange)
+
+A Python library for designing randomized experiments and estimating causal effects under the
+potential outcomes framework (Rubin Causal Model). Treatment assignment is the starting point;
+statistical models come second.
+
+## Status
+
+Active development. Phases 0–3 complete, Phase 4 (inference) in planning. See
+[Project status](#project-status) below for details.
 
 ## Installation
 
@@ -11,38 +21,146 @@
 pip install skxperiments
 ```
 
-### Quick Start
-```python
-import skxperiments
+Requires Python 3.10+. Dependencies: `numpy`, `pandas`, `scipy`.
 
-# Full usage examples will be added in upcoming phases.
-print(skxperiments.__version__)
+## Quick start
+
+```python
+import pandas as pd
+from skxperiments.design.crd import CRD
+from skxperiments.estimators.difference_in_means import DifferenceInMeans
+
+# 1. Design: completely randomized assignment, 50/50 split
+df = pd.DataFrame({"y": [...], "x": [...]})
+design = CRD(p=0.5, seed=42)
+assignment = design.randomize(df)
+
+# 2. Estimate ATE
+estimator = DifferenceInMeans(outcome_col="y")
+result = estimator.fit(assignment).estimate()
+
+print(result.ate)
+# Inference (SE, CI, p-value) coming in Phase 4.
 ```
 
+For variance reduction with covariates, use `LinEstimator` (Lin 2013) or `CUPED` (Deng et al.
+2013). For blocked or factorial designs, use `BlockedCRD` + `BlockedDifferenceInMeans` or
+`FactorialDesign` + `FactorialEstimator`. For rerandomization on Mahalanobis distance,
+use `ReRandomizedCRD` (Morgan & Rubin 2012).
+
+## Design philosophy
+
+1. **The assignment mechanism is primary**, not the statistical model.
+2. **API in scikit-learn style**: parameters in `__init__`, data in `fit()`, learned attributes
+   end with `_`.
+3. **`Assignment` is the contract** between designs and estimators — estimators receive
+   `Assignment` objects, not loose DataFrames.
+4. **Randomization-based inference is the default**; classical t-tests are not.
+5. **Finite-population vs. superpopulation inference are distinguished explicitly.**
+6. **Fail fast** with clear messages when designs and estimators are incompatible.
+7. **No side effects**: `fit()` and `randomize()` never mutate input DataFrames.
+
+## Project status
+
+| Phase | Module | Status |
+|---|---|---|
+| 0 | Scaffold, exceptions, CI | ✓ Complete |
+| 1 | Core (`Assignment`, `Results`, base classes) | ✓ Complete |
+| 2 | Designs (CRD, BlockedCRD, ReRandomizedCRD, FactorialDesign, balance, power) | ✓ Complete |
+| 3 | Estimators (DIM, BlockedDIM, Factorial, Lin, CUPED) | ✓ Complete |
+| 4 | Inference (RandomizationTest, NeymanCI, BootstrapCI, multiple testing, sequential) | Planned |
+| 5 | Diagnostics (SRM, A/A test, balance report) | Planned |
+| 6 | Pipeline composition | Planned |
+| 7 | Visualization and reporting | Planned |
+
+Test coverage: ~452 tests, all passing on CI.
+
+See `CHANGELOG.md` for the full history of changes.
+
+## What's implemented
+
+### Designs (`skxperiments.design`)
+
+- **`CRD`** — Completely randomized design.
+- **`BlockedCRD`** — Independent randomization within blocks.
+- **`ReRandomizedCRD`** — Mahalanobis acceptance criterion with cached covariance matrix; loop with `max_attempts`.
+- **`FactorialDesign`** — 2^K factorial design with equal cell sizes; little-endian cell encoding.
+- **`check_balance(assignment, covariates)`** — Standardized mean differences (SMD), pooled std with `ddof=1`.
+- **`power_analysis(...)`** — Sample size, MDE, or power for two-sample mean comparisons.
+
+### Estimators (`skxperiments.estimators`)
+
+- **`DifferenceInMeans`** — Simple ATE for `CRDAssignment`.
+- **`BlockedDifferenceInMeans`** — Size-weighted ATE for `BlockedAssignment`.
+- **`FactorialEstimator`** — All 2^K − 1 effects (main effects and interactions of all orders) for `FactorialAssignment`. Returns `Results` in multi-effect mode.
+- **`LinEstimator`** — Covariate-adjusted ATE via OLS with treatment-covariate interaction (Lin 2013).
+- **`CUPED`** — Variance reduction with a pre-experiment covariate (Deng et al. 2013).
+
+All estimators return `Results` with point estimates only; standard errors, confidence intervals,
+and p-values come in Phase 4.
+
+## What's coming
+
+### Phase 4 — Inference
+
+The `Results` returned by current estimators have `se`, `ci`, and `p_value` set to `None`.
+Phase 4 adds inference classes that consume an `Assignment` (or a `Results` from a fitted
+estimator) and produce confidence intervals and p-values:
+
+- **`RandomizationTest`** — Permutation-based null distribution via `Assignment.draw()`.
+- **`NeymanCI`** — Finite-population variance for CRD and blocked CRD.
+- **`BootstrapCI`** — Percentile, BCa, studentized.
+- **`MultipleTestingCorrection`** — Holm, Bonferroni, Benjamini–Hochberg.
+- **`SequentialTest`** — mSPRT and always-valid intervals.
+
+### Phase 5 — Diagnostics
+
+`SRMTest`, `AATest`, `BalanceReport`. The pipeline (Phase 6) will run `SRMTest` automatically
+before any estimation.
+
+### Phase 6 — Pipeline
+
+`ExperimentPipeline` composes design + estimator + inference with automatic SRM checking.
+`ExperimentComparison` aggregates multiple pipelines for forest plots and joint multiple-testing
+correction.
+
+### Phase 7 — Reporting
+
+Plots (`plot_balance`, `plot_forest`, `plot_effect`, `plot_interaction`, `plot_power_curve`,
+`plot_null_distribution`, `plot_srm`) and HTML reports (`ExperimentReport`). `matplotlib` and
+`plotly` are optional dependencies.
+
 ## Contributing
-See CHANGELOG.md for the project history and release notes.
-Contributions are welcome! Please open an issue or pull request on GitHub.
 
-### `CHANGELOG.md`
+Contributions are welcome. Please open an issue to discuss substantial changes before submitting
+a pull request. The architecture has documented design decisions that should be respected — see
+the project notes in CHANGELOG and the docstrings of base classes (`BaseAssignment`,
+`BaseEstimator`, `Results`) for the contracts new code must follow.
 
-```markdown
-# Changelog
+Run the test suite with:
 
-All notable changes to this project will be documented in this file.
+```bash
+pytest tests/ -v
+```
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## License
 
-## [0.1.0-dev] - 2024-01-01
+MIT.
 
-### Added
+## References
 
-- Project scaffold: pyproject.toml, README, CI workflow, pre-commit config
-- Package structure with core, design, estimators, inference, diagnostics, reporting, testing submodules
-- Custom exceptions: SkxperimentsError, DesignEstimatorMismatch, NotFittedError, InsufficientDataError, InvalidDesignError
-- PotentialOutcomes class for representing unit-level potential outcomes
-- BaseAssignment (ABC) and CRDAssignment for representing treatment assignments
-- Results class as uniform output object for estimators and inference
-- BaseDesign, BaseEstimator, BaseInference abstract base classes
-- DiagnosticsReport dataclass
-- Full test suite for core module
+The implementations follow standard textbook formulations:
+
+- Imbens, G. W., & Rubin, D. B. (2015). *Causal inference for statistics, social, and biomedical
+  sciences: An introduction.* Cambridge University Press.
+- Lin, W. (2013). Agnostic notes on regression adjustments to experimental data: Reexamining
+  Freedman's critique. *Annals of Applied Statistics*, 7(1), 295–318.
+- Morgan, K. L., & Rubin, D. B. (2012). Rerandomization to improve covariate balance in
+  experiments. *Annals of Statistics*, 40(2), 1263–1282.
+- Deng, A., Xu, Y., Kohavi, R., & Walker, T. (2013). Improving the sensitivity of online
+  controlled experiments by utilizing pre-experiment data. *WSDM 2013*.
+- Box, G. E. P., Hunter, J. S., & Hunter, W. G. (2005). *Statistics for experimenters: Design,
+  innovation, and discovery* (2nd ed.). Wiley.
+- Cohen, J. (1988). *Statistical power analysis for the behavioral sciences* (2nd ed.). Routledge.
+- Austin, P. C. (2009). Balance diagnostics for comparing the distribution of baseline covariates
+  between treatment groups in propensity-score matched samples. *Statistics in Medicine*.
