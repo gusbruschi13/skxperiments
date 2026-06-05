@@ -12,8 +12,8 @@ statistical models come second.
 
 ## Status
 
-Active development. Phases 0–3 complete; Phase 4.1 (`RandomizationTest`) complete; Phase 4.2–4.5
-in planning. See [Project status](#project-status) below for details.
+Active development. Phases 0–3 complete; Phases 4.1–4.2 complete; Phases 4.3–4.5 in planning.
+See [Project status](#project-status) below for details.
 
 ## Installation
 
@@ -26,22 +26,29 @@ Requires Python 3.10+. Dependencies: `numpy`, `pandas`, `scipy`.
 ## Quick start
 
 ```python
+import numpy as np
 import pandas as pd
 from skxperiments.design.crd import CRD
 from skxperiments.estimators.difference_in_means import DifferenceInMeans
 from skxperiments.inference import RandomizationTest
 
-# 1. Design: completely randomized assignment, 50/50 split
-df = pd.DataFrame({"y": [...], "x": [...]})
+# 1. Generate a synthetic dataset
+rng = np.random.default_rng(42)
+df = pd.DataFrame({
+    "x": rng.normal(0.0, 1.0, 200),
+    "y": rng.normal(0.0, 1.0, 200),
+})
+
+# 2. Design: completely randomized assignment, 50/50 split
 design = CRD(p=0.5, seed=42)
 assignment = design.randomize(df)
 
-# 2. Point estimate of the ATE
+# 3. Point estimate of the ATE
 estimator = DifferenceInMeans(outcome_col="y")
 result = estimator.fit(assignment).estimate()
 print(result.ate)
 
-# 3. Randomization-based p-value (Fisher's sharp null)
+# 4. Randomization-based p-value (Fisher's sharp null)
 rt = RandomizationTest(estimator=estimator, n_permutations=10_000, seed=0)
 result = rt.fit(assignment).estimate()
 print(result.ate, result.p_value)
@@ -51,7 +58,9 @@ For variance reduction with covariates, use `LinEstimator` (Lin 2013) or `CUPED`
 2013). For blocked or factorial designs, use `BlockedCRD` + `BlockedDifferenceInMeans` or
 `FactorialDesign` + `FactorialEstimator`. For rerandomization on Mahalanobis distance,
 use `ReRandomizedCRD` (Morgan & Rubin 2012). `RandomizationTest` works with all of these
-(except `FactorialAssignment` in v1).
+(except `FactorialAssignment` in v1). To control the family-wise error rate or false
+discovery rate when reporting multiple effects, wrap the result in
+`MultipleTestingCorrection`.
 
 ## Design philosophy
 
@@ -73,14 +82,15 @@ use `ReRandomizedCRD` (Morgan & Rubin 2012). `RandomizationTest` works with all 
 | 1 | Core (`Assignment`, `Results`, base classes) | ✓ Complete |
 | 2 | Designs (CRD, BlockedCRD, ReRandomizedCRD, FactorialDesign, balance, power) | ✓ Complete |
 | 3 | Estimators (DIM, BlockedDIM, Factorial, Lin, CUPED) | ✓ Complete |
-| 4 | Inference (RandomizationTest, NeymanCI, BootstrapCI, multiple testing, sequential) | 🚧 In progress (4.1 complete) |
+| 4 | Inference (RandomizationTest, MultipleTestingCorrection, NeymanCI, BootstrapCI, sequential) | 🚧 In progress (4.1, 4.2 complete) |
 | 5 | Diagnostics (SRM, A/A test, balance report) | Planned |
 | 6 | Pipeline composition | Planned |
 | 7 | Visualization and reporting | Planned |
 
-Test coverage: ~503 tests, all passing on CI.
+Test coverage: 528 tests, all passing on CI.
 
-See `CHANGELOG.md` for the full history of changes.
+See [`ROADMAP.md`](ROADMAP.md) for deferred features and v2 plans, and `CHANGELOG.md` for the
+full history of changes.
 
 ## What's implemented
 
@@ -112,20 +122,24 @@ intervals come from inference classes in `skxperiments.inference`.
   Phipson & Smyth (2010) continuity correction. Three alternatives: `"two-sided"`,
   `"greater"`, `"less"`. Works with `DifferenceInMeans`, `BlockedDifferenceInMeans`,
   `LinEstimator`, and `CUPED`.
+- **`MultipleTestingCorrection`** — Bonferroni, Holm (FWER) and Benjamini-Hochberg (FDR)
+  correction over a family of p-values. Accepts a multi-effect `Results` (typical from
+  `FactorialEstimator` after inference) or a list of scalar `Results` (for comparing
+  independent experiments). Clips corrected p-values to `[0, 1]`; preserves originals
+  in `Results.extra["original_p_values"]`. Default method is Holm.
 
 ## What's coming
 
 ### Phase 4 — Inference (continued)
 
-`RandomizationTest` is implemented. The remaining inference classes will produce confidence
-intervals and corrections beyond the permutation p-value:
+`RandomizationTest` and `MultipleTestingCorrection` are implemented. The remaining
+inference classes will produce confidence intervals beyond the permutation p-value:
 
-- **`MultipleTestingCorrection`** — Holm, Bonferroni, Benjamini–Hochberg.
 - **`NeymanCI`** — Finite-population variance for CRD and blocked CRD; CUPED-specific
   variance via internal branch.
 - **`BootstrapCI`** — Percentile, BCa (superpopulation inference).
 - **`SequentialTest`** — mSPRT and always-valid intervals (under evaluation; may be
-  deferred to v2).
+  deferred to v2 per `ROADMAP.md`).
 
 ### Phase 5 — Diagnostics
 
@@ -148,8 +162,8 @@ Plots (`plot_balance`, `plot_forest`, `plot_effect`, `plot_interaction`, `plot_p
 
 Contributions are welcome. Please open an issue to discuss substantial changes before submitting
 a pull request. The architecture has documented design decisions that should be respected — see
-the project notes in CHANGELOG and the docstrings of base classes (`BaseAssignment`,
-`BaseEstimator`, `Results`) for the contracts new code must follow.
+[`ROADMAP.md`](ROADMAP.md), the project notes in `CHANGELOG.md`, and the docstrings of base
+classes (`BaseAssignment`, `BaseEstimator`, `Results`) for the contracts new code must follow.
 
 Run the test suite with:
 
@@ -188,3 +202,8 @@ The implementations follow standard textbook formulations:
   exact P-values when permutations are randomly drawn. *Statistical Applications in Genetics
   and Molecular Biology*, 9(1).
 - Fisher, R. A. (1935). *The Design of Experiments*. Oliver and Boyd.
+- Holm, S. (1979). A simple sequentially rejective multiple test procedure. *Scandinavian
+  Journal of Statistics*, 6(2), 65–70.
+- Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate: a practical and
+  powerful approach to multiple testing. *Journal of the Royal Statistical Society: Series B*,
+  57(1), 289–300.

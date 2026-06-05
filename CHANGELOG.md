@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 4.2: Multiple testing correction
+
+- **`MultipleTestingCorrection`** (`skxperiments.inference.multiple`):
+  utility class for applying Bonferroni, Holm, or Benjamini-Hochberg
+  correction to a family of p-values. Standalone class (not
+  `BaseInference`); operates on post-processed p-values rather than
+  on `Assignment` objects. API: `MultipleTestingCorrection(method,
+  alpha).correct(results) -> Results | list[Results]`. Accepts
+  `Results` in multi-effect mode (`p_value: dict`) or `list[Results]`
+  in scalar mode; output preserves input format. Default
+  `method="holm"` (uniformly more powerful than Bonferroni for FWER).
+  All methods clip corrected p-values to `[0, 1]`.
+- **FWER vs. FDR control**: the docstring explicitly distinguishes
+  Bonferroni and Holm (FWER, family-wise error rate) from BH (FDR,
+  false discovery rate); the choice depends on the inferential goal.
+- **Double-correction detection**: applying `correct()` to a
+  `Results` whose `extra` already contains any of the 4 reserved
+  keys raises `InvalidDesignError` pointing the user at the original
+  uncorrected `Results`.
+- **`alpha` override**: `MultipleTestingCorrection(alpha=...)`
+  overrides the input `Results`' `alpha` in the output.
+- **Reserved keys schema in `Results.extra`** extended with
+  `correction_method`, `original_p_values`, `family_wise_alpha`,
+  `n_tests`. Documented in the `Results` class docstring.
+
 ### Added — Phase 4.1: Randomization-based inference
 
 - **`RandomizationTest`** (`skxperiments.inference.randomization_test`): Fisher's sharp null
@@ -30,8 +55,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `inference_mode`, `theta`, `correlation` (written by Phase 3 estimators);
   `n_permutations`, `null_distribution`, `alternative` (written by `RandomizationTest`).
 - `pytest` marker `slow` registered in `pyproject.toml` for tests that run statistical
-  property checks (KS-uniformity of p-values under the true null, variance reduction
-  under rerandomization). Run `pytest -m "not slow"` for the fast suite.
+  property checks.
+
+### Added — Roadmap
+
+- **`ROADMAP.md`**: centralized tracking of deferred features, decisions
+  to revisit, and v2 plans. Organized by phase with What / Why deferred /
+  Trigger structure. Linked from `README.md`.
+
+### Tests — Phase 4.2
+
+- 25 tests for `MultipleTestingCorrection` across 7 grouping classes
+  covering creation validations, input validation (rejects scalar
+  single, multi-effect without p_value, empty list, mixed list, double
+  correction), Bonferroni (known values, clipping, ordering),
+  Holm (known values, monotonicity, dominance over Bonferroni,
+  clipping), Benjamini-Hochberg (known values, monotonicity, FDR
+  control via 1000-rep simulation marked `slow`), multi-effect input
+  (effects/metadata preservation, alpha override), and list input
+  (order preservation, per-Results metadata, family metadata in each
+  element).
 
 ### Tests — Phase 4.1
 
@@ -48,12 +91,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 
-- Phase 4.2: `MultipleTestingCorrection` (Bonferroni, Holm, Benjamini–Hochberg).
 - Phase 4.3: `NeymanCI` for finite-population variance under CRD and blocked CRD;
   CUPED-specific variance via internal branch.
 - Phase 4.4: `BootstrapCI` (percentile, BCa); explicitly superpopulation inference.
 - Phase 4.5: `SequentialTest` (mSPRT, always-valid intervals) — under evaluation;
-  may be deferred to v2.
+  may be deferred to v2 (see `ROADMAP.md`).
 - Phase 5: diagnostics (`SRMTest`, `AATest`, `BalanceReport`).
 - Phase 6: `ExperimentPipeline` and `ExperimentComparison`.
 - Phase 7: visualization and HTML reporting.
