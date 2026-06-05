@@ -120,6 +120,18 @@ class Results:
     ... )
     >>> r.is_significant(("A",))
     True
+
+    *Written by inference classes (Phase 4.2):*
+    
+        - ``"correction_method"`` : str, ``"bonferroni"``, ``"holm"``, or
+          ``"bh"``. The multiple-testing correction applied by
+          ``MultipleTestingCorrection``.
+        - ``"original_p_values"`` : dict or list. The uncorrected p-values
+          before applying the correction. Same structure as the corrected
+          ``p_value``: dict in multi-effect mode, list in scalar-list mode.
+        - ``"family_wise_alpha"`` : float. The family-wise alpha used by
+          ``MultipleTestingCorrection``.
+        - ``"n_tests"`` : int. The size of the testing family.
     """
 
     def __init__(
