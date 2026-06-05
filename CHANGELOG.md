@@ -7,10 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 4.1: Randomization-based inference
+
+- **`RandomizationTest`** (`skxperiments.inference.randomization_test`): Fisher's sharp null
+  hypothesis test via Monte Carlo permutations. Materializes the `BaseAssignment.draw()`
+  contract by routing each permutation through the original randomization mechanism — under
+  rerandomization, the cached Mahalanobis covariance matrix is reused via
+  `CRDAssignment.rerandomization_metadata`; under blocking, within-block proportions are
+  preserved automatically. Always refits the estimator on the original assignment at the
+  start of `fit()`; prior estimator state is discarded. Three alternatives:
+  `"two-sided"` (criterion `|T_perm| >= |T_obs|`), `"greater"`, `"less"`. P-value uses the
+  Phipson & Smyth (2010) continuity correction `(1 + n_extreme) / (1 + n_permutations)`,
+  guaranteeing a Monte Carlo p-value strictly greater than zero. Reproducibility: same
+  `seed` produces identical `null_distribution_`.
+- **`BaseInference.estimate()`** abstract method: subclasses must now implement both
+  `fit()` and `estimate()`, mirroring `BaseEstimator`.
+- **`BaseInference._validate_assignment_type()`**: thin wrapper exposing the same
+  validation surface as `BaseEstimator`. Underlying logic extracted to a module-level
+  helper `_check_assignment_type` in `skxperiments.core.base` so both ABCs share a
+  single source of truth for the `DesignEstimatorMismatch` message format.
+- Reserved keys schema in `Results.extra` documented in the `Results` class docstring:
+  `inference_mode`, `theta`, `correlation` (written by Phase 3 estimators);
+  `n_permutations`, `null_distribution`, `alternative` (written by `RandomizationTest`).
+- `pytest` marker `slow` registered in `pyproject.toml` for tests that run statistical
+  property checks (KS-uniformity of p-values under the true null, variance reduction
+  under rerandomization). Run `pytest -m "not slow"` for the fast suite.
+
+### Tests — Phase 4.1
+
+- 36 tests for `RandomizationTest` across 10 grouping classes covering creation,
+  validation, fit/estimate behavior, statistical properties (slow), reproducibility,
+  rerandomization (Mahalanobis preservation under draws), blocking (per-block
+  treatment count preservation), integration with all four Phase 3 estimators
+  (`DifferenceInMeans`, `BlockedDifferenceInMeans`, `LinEstimator`, `CUPED`), and
+  alternative hypothesis behavior. `FactorialAssignment` and multi-effect estimators
+  are explicitly rejected (deferred to v2).
+- 15 new tests in `tests/core/test_base.py` covering the extended `BaseInference`
+  contract and snapshot tests pinning the `DesignEstimatorMismatch` message format
+  after the `_check_assignment_type` refactor.
+
 ### Planned
 
-- Phase 4: inference classes (`RandomizationTest`, `NeymanCI`, `BootstrapCI`,
-  `MultipleTestingCorrection`, `SequentialTest`).
+- Phase 4.2: `MultipleTestingCorrection` (Bonferroni, Holm, Benjamini–Hochberg).
+- Phase 4.3: `NeymanCI` for finite-population variance under CRD and blocked CRD;
+  CUPED-specific variance via internal branch.
+- Phase 4.4: `BootstrapCI` (percentile, BCa); explicitly superpopulation inference.
+- Phase 4.5: `SequentialTest` (mSPRT, always-valid intervals) — under evaluation;
+  may be deferred to v2.
 - Phase 5: diagnostics (`SRMTest`, `AATest`, `BalanceReport`).
 - Phase 6: `ExperimentPipeline` and `ExperimentComparison`.
 - Phase 7: visualization and HTML reporting.

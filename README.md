@@ -12,8 +12,8 @@ statistical models come second.
 
 ## Status
 
-Active development. Phases 0–3 complete, Phase 4 (inference) in planning. See
-[Project status](#project-status) below for details.
+Active development. Phases 0–3 complete; Phase 4.1 (`RandomizationTest`) complete; Phase 4.2–4.5
+in planning. See [Project status](#project-status) below for details.
 
 ## Installation
 
@@ -29,24 +29,29 @@ Requires Python 3.10+. Dependencies: `numpy`, `pandas`, `scipy`.
 import pandas as pd
 from skxperiments.design.crd import CRD
 from skxperiments.estimators.difference_in_means import DifferenceInMeans
+from skxperiments.inference import RandomizationTest
 
 # 1. Design: completely randomized assignment, 50/50 split
 df = pd.DataFrame({"y": [...], "x": [...]})
 design = CRD(p=0.5, seed=42)
 assignment = design.randomize(df)
 
-# 2. Estimate ATE
+# 2. Point estimate of the ATE
 estimator = DifferenceInMeans(outcome_col="y")
 result = estimator.fit(assignment).estimate()
-
 print(result.ate)
-# Inference (SE, CI, p-value) coming in Phase 4.
+
+# 3. Randomization-based p-value (Fisher's sharp null)
+rt = RandomizationTest(estimator=estimator, n_permutations=10_000, seed=0)
+result = rt.fit(assignment).estimate()
+print(result.ate, result.p_value)
 ```
 
 For variance reduction with covariates, use `LinEstimator` (Lin 2013) or `CUPED` (Deng et al.
 2013). For blocked or factorial designs, use `BlockedCRD` + `BlockedDifferenceInMeans` or
 `FactorialDesign` + `FactorialEstimator`. For rerandomization on Mahalanobis distance,
-use `ReRandomizedCRD` (Morgan & Rubin 2012).
+use `ReRandomizedCRD` (Morgan & Rubin 2012). `RandomizationTest` works with all of these
+(except `FactorialAssignment` in v1).
 
 ## Design philosophy
 
@@ -68,12 +73,12 @@ use `ReRandomizedCRD` (Morgan & Rubin 2012).
 | 1 | Core (`Assignment`, `Results`, base classes) | ✓ Complete |
 | 2 | Designs (CRD, BlockedCRD, ReRandomizedCRD, FactorialDesign, balance, power) | ✓ Complete |
 | 3 | Estimators (DIM, BlockedDIM, Factorial, Lin, CUPED) | ✓ Complete |
-| 4 | Inference (RandomizationTest, NeymanCI, BootstrapCI, multiple testing, sequential) | Planned |
+| 4 | Inference (RandomizationTest, NeymanCI, BootstrapCI, multiple testing, sequential) | 🚧 In progress (4.1 complete) |
 | 5 | Diagnostics (SRM, A/A test, balance report) | Planned |
 | 6 | Pipeline composition | Planned |
 | 7 | Visualization and reporting | Planned |
 
-Test coverage: ~452 tests, all passing on CI.
+Test coverage: ~503 tests, all passing on CI.
 
 See `CHANGELOG.md` for the full history of changes.
 
@@ -96,22 +101,31 @@ See `CHANGELOG.md` for the full history of changes.
 - **`LinEstimator`** — Covariate-adjusted ATE via OLS with treatment-covariate interaction (Lin 2013).
 - **`CUPED`** — Variance reduction with a pre-experiment covariate (Deng et al. 2013).
 
-All estimators return `Results` with point estimates only; standard errors, confidence intervals,
-and p-values come in Phase 4.
+All estimators return `Results` with point estimates only; standard errors and confidence
+intervals come from inference classes in `skxperiments.inference`.
+
+### Inference (`skxperiments.inference`)
+
+- **`RandomizationTest`** — Fisher's sharp null hypothesis test via Monte Carlo permutations.
+  Uses `Assignment.draw()` to respect the original randomization mechanism (including
+  rerandomization Mahalanobis criterion and within-block proportions). P-value via the
+  Phipson & Smyth (2010) continuity correction. Three alternatives: `"two-sided"`,
+  `"greater"`, `"less"`. Works with `DifferenceInMeans`, `BlockedDifferenceInMeans`,
+  `LinEstimator`, and `CUPED`.
 
 ## What's coming
 
-### Phase 4 — Inference
+### Phase 4 — Inference (continued)
 
-The `Results` returned by current estimators have `se`, `ci`, and `p_value` set to `None`.
-Phase 4 adds inference classes that consume an `Assignment` (or a `Results` from a fitted
-estimator) and produce confidence intervals and p-values:
+`RandomizationTest` is implemented. The remaining inference classes will produce confidence
+intervals and corrections beyond the permutation p-value:
 
-- **`RandomizationTest`** — Permutation-based null distribution via `Assignment.draw()`.
-- **`NeymanCI`** — Finite-population variance for CRD and blocked CRD.
-- **`BootstrapCI`** — Percentile, BCa, studentized.
 - **`MultipleTestingCorrection`** — Holm, Bonferroni, Benjamini–Hochberg.
-- **`SequentialTest`** — mSPRT and always-valid intervals.
+- **`NeymanCI`** — Finite-population variance for CRD and blocked CRD; CUPED-specific
+  variance via internal branch.
+- **`BootstrapCI`** — Percentile, BCa (superpopulation inference).
+- **`SequentialTest`** — mSPRT and always-valid intervals (under evaluation; may be
+  deferred to v2).
 
 ### Phase 5 — Diagnostics
 
@@ -143,6 +157,12 @@ Run the test suite with:
 pytest tests/ -v
 ```
 
+Skip slow statistical tests:
+
+```bash
+pytest tests/ -v -m "not slow"
+```
+
 ## License
 
 MIT.
@@ -164,3 +184,7 @@ The implementations follow standard textbook formulations:
 - Cohen, J. (1988). *Statistical power analysis for the behavioral sciences* (2nd ed.). Routledge.
 - Austin, P. C. (2009). Balance diagnostics for comparing the distribution of baseline covariates
   between treatment groups in propensity-score matched samples. *Statistics in Medicine*.
+- Phipson, B., & Smyth, G. K. (2010). Permutation P-values should never be zero: calculating
+  exact P-values when permutations are randomly drawn. *Statistical Applications in Genetics
+  and Molecular Biology*, 9(1).
+- Fisher, R. A. (1935). *The Design of Experiments*. Oliver and Boyd.
