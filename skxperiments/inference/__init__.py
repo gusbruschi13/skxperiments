@@ -1,8 +1,9 @@
 """Inference module for hypothesis testing and confidence intervals.
 
-This module will contain randomization-based inference methods,
-including Fisher's exact test, Neyman's repeated sampling approach,
-and permutation tests.
+Phase 4: randomization-based inference, Neyman variance, bootstrap,
+multiple testing correction, sequential tests.
 """
 
-__all__: list[str] = []
+from skxperiments.inference.randomization_test import RandomizationTest
+
+__all__ = ["RandomizationTest"]
