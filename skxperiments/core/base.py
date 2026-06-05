@@ -22,6 +22,47 @@ if TYPE_CHECKING:
     from skxperiments.core.results import Results
 
 
+def _check_assignment_type(
+    obj: Any,
+    assignment: Any,
+    expected_type: type | tuple[type, ...],
+) -> None:
+    """Validate that ``assignment`` is an instance of ``expected_type``.
+
+    Module-level helper shared by ``BaseEstimator._validate_assignment_type``
+    and ``BaseInference._validate_assignment_type``. Both ABCs expose
+    thin wrappers that delegate here, so the validation logic and the
+    error message format live in a single place.
+
+    Parameters
+    ----------
+    obj : Any
+        The estimator or inference instance calling this helper. Used
+        to populate ``estimator_name`` in the raised exception.
+    assignment : Any
+        The assignment object to validate.
+    expected_type : type or tuple of type
+        Acceptable type(s) for ``assignment``.
+
+    Raises
+    ------
+    DesignEstimatorMismatch
+        If ``assignment`` is not an instance of any type in
+        ``expected_type``.
+    """
+    if not isinstance(assignment, expected_type):
+        if isinstance(expected_type, tuple):
+            expected_name = " or ".join(t.__name__ for t in expected_type)
+        else:
+            expected_name = expected_type.__name__
+
+        raise DesignEstimatorMismatch(
+            estimator_name=type(obj).__name__,
+            received_type=type(assignment).__name__,
+            expected_type=expected_name,
+        )
+
+
 class BaseDesign(ABC):
     """Abstract base class for all experimental designs.
 
@@ -225,6 +266,11 @@ class BaseEstimator(ABC):
     ) -> None:
         """Validate that the assignment is of the expected type(s).
 
+        Thin wrapper that delegates to the module-level
+        ``_check_assignment_type``. Kept as a method for API
+        compatibility with concrete estimators that call
+        ``self._validate_assignment_type(...)``.
+
         Parameters
         ----------
         assignment : Any
@@ -239,17 +285,7 @@ class BaseEstimator(ABC):
         DesignEstimatorMismatch
             If the assignment type does not match any of the expected types.
         """
-        if not isinstance(assignment, expected_type):
-            if isinstance(expected_type, tuple):
-                expected_name = " or ".join(t.__name__ for t in expected_type)
-            else:
-                expected_name = expected_type.__name__
-
-            raise DesignEstimatorMismatch(
-                estimator_name=type(self).__name__,
-                received_type=type(assignment).__name__,
-                expected_type=expected_name,
-            )
+        _check_assignment_type(self, assignment, expected_type)
 
     def __repr__(self) -> str:
         """Return string representation with parameters.
@@ -267,14 +303,30 @@ class BaseEstimator(ABC):
 class BaseInference(ABC):
     """Abstract base class for all inference methods.
 
-    Subclasses must implement the fit() method.
+    Subclasses configure their dependencies (e.g., a wrapped estimator)
+    in ``__init__``, receive a ``BaseAssignment`` in ``fit()``, and
+    produce a new ``Results`` object via ``estimate()``.
+
+    Subclasses **must** implement both ``fit()`` and ``estimate()``.
+
+    Contract
+    --------
+    - ``fit(assignment)`` populates instance attributes ending in
+      underscore (e.g., ``observed_statistic_``, ``p_value_``).
+    - ``estimate()`` produces a **new** ``Results`` object. It must
+      not mutate the estimator's ``Results`` or any other input.
+    - Subclasses may accept arbitrary parameters in ``__init__`` (e.g.,
+      a configured estimator, ``n_permutations``, ``alpha``).
 
     Examples
     --------
     >>> class RandomizationTest(BaseInference):
-    ...     def __init__(self, n_permutations=1000):
+    ...     def __init__(self, estimator, n_permutations=1000):
+    ...         self.estimator = estimator
     ...         self.n_permutations = n_permutations
     ...     def fit(self, assignment):
+    ...         ...
+    ...     def estimate(self):
     ...         ...
     """
 
@@ -291,6 +343,19 @@ class BaseInference(ABC):
         -------
         BaseInference
             Returns self.
+        """
+
+    @abstractmethod
+    def estimate(self) -> "Results":
+        """Compute the inferential result.
+
+        Returns
+        -------
+        Results
+            Results object with point estimate (copied from the underlying
+            estimator) and inferential quantities (p_value, ci, se as
+            applicable) populated. Always returns a NEW Results object;
+            never mutates the estimator's Results.
         """
 
     def get_params(self) -> dict[str, Any]:
@@ -353,6 +418,35 @@ class BaseInference(ABC):
                 class_name=type(self).__name__,
                 required_methods=["fit"],
             )
+
+    def _validate_assignment_type(
+        self,
+        assignment: Any,
+        expected_type: type | tuple[type, ...],
+    ) -> None:
+        """Validate that the assignment is of the expected type(s).
+
+        Thin wrapper that delegates to the module-level
+        ``_check_assignment_type``. Mirrors
+        ``BaseEstimator._validate_assignment_type`` so inference
+        classes have the same validation surface as estimators.
+
+        Parameters
+        ----------
+        assignment : Any
+            The assignment object to validate.
+        expected_type : type or tuple of type
+            The expected type(s) of the assignment. A tuple may be passed
+            when the inference method accepts multiple Assignment types
+            (e.g., RandomizationTest accepts both CRDAssignment and
+            BlockedAssignment).
+
+        Raises
+        ------
+        DesignEstimatorMismatch
+            If the assignment type does not match any of the expected types.
+        """
+        _check_assignment_type(self, assignment, expected_type)
 
     def __repr__(self) -> str:
         """Return string representation with parameters.

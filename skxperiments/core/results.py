@@ -65,6 +65,7 @@ class Results:
     extra : dict or None, optional
         Additional metadata as key-value pairs (e.g., n_permutations,
         convergence info). Not the primary result. By default None.
+        See Notes for the schema of reserved keys.
 
     Raises
     ------
@@ -73,6 +74,35 @@ class Results:
         or if shape/value validations fail on ci, p_value, or alpha.
     TypeError
         If ``ate`` is provided but is not numeric.
+
+    Notes
+    -----
+    Reserved keys in ``extra``
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    The following keys are reserved by skxperiments components.
+    Custom metadata may use any other key.
+
+    *Written by estimators (Phase 3):*
+
+    - ``"inference_mode"`` : str, ``"finite_population"`` or
+      ``"superpopulation"``. Documentational metadata propagated by
+      ``LinEstimator``. Read by inference classes in Phase 4.
+    - ``"theta"`` : float. CUPED adjustment coefficient
+      ``Cov(Y, X_pre) / Var(X_pre)``.
+    - ``"correlation"`` : float. Pearson correlation between outcome
+      and pre-period covariate, written by ``CUPED``.
+
+    *Written by inference classes (Phase 4):*
+
+    - ``"n_permutations"`` : int. Number of permutations used by
+      ``RandomizationTest``.
+    - ``"null_distribution"`` : np.ndarray. Array of permuted
+      statistics under the sharp null, written by
+      ``RandomizationTest``. Length equals ``n_permutations``.
+    - ``"alternative"`` : str. Alternative hypothesis used by
+      ``RandomizationTest``: ``"two-sided"``, ``"greater"``, or
+      ``"less"``.
 
     Examples
     --------

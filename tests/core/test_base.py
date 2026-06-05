@@ -69,6 +69,15 @@ class ConcreteInference(BaseInference):
         self.result_ = Results(ate=0.0, p_value=0.5)
         return self
 
+    def estimate(self) -> Results:
+        """Dummy estimate.
+
+        Required since Phase 4 prep made BaseInference.estimate abstract.
+        Returns the Results stored during fit.
+        """
+        self._check_is_fitted()
+        return self.result_
+
 
 # --- Tests ---
 
@@ -172,7 +181,7 @@ class TestBaseEstimatorValidateAssignmentType:
         )
         # Should not raise
         estimator._validate_assignment_type(assignment, (CRDAssignment,))
-    
+
     def test_rejects_with_tuple_lists_all_expected_types(self) -> None:
         """Error message should mention all expected types when tuple is passed."""
         estimator = ConcreteEstimator()
@@ -275,3 +284,213 @@ class TestDiagnosticsReport:
         report = DiagnosticsReport()
         assert report.flags == []
         assert report.warnings == []
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 prep additions
+# ---------------------------------------------------------------------------
+
+
+# Sentinel types for assignment-type validation tests (decoupled from
+# the real CRDAssignment / BlockedAssignment to keep these tests focused
+# on the ABC contract, not on Assignment construction).
+
+
+class _FakeCRDAssignment:
+    """Sentinel type used only to test type checks."""
+
+
+class _FakeBlockedAssignment:
+    """Sentinel type used only to test type checks."""
+
+
+class _FakeFactorialAssignment:
+    """Sentinel type used only to test type checks."""
+
+
+class TestBaseInferenceContract:
+    """Tests for the abstract method contract of BaseInference.
+
+    Phase 4 prep: BaseInference now requires both `fit` and `estimate`
+    to be implemented by subclasses.
+    """
+
+    def test_subclass_with_both_methods_instantiates(self) -> None:
+        """A subclass implementing both fit and estimate instantiates."""
+        inf = ConcreteInference()
+        assert isinstance(inf, BaseInference)
+
+    def test_subclass_missing_estimate_fails(self) -> None:
+        """A subclass implementing only fit cannot be instantiated."""
+
+        class _MissingEstimate(BaseInference):
+            def fit(self, assignment):  # type: ignore[no-untyped-def]
+                return self
+
+        with pytest.raises(TypeError, match="abstract"):
+            _MissingEstimate()  # type: ignore[abstract]
+
+    def test_subclass_missing_fit_fails(self) -> None:
+        """A subclass implementing only estimate cannot be instantiated."""
+
+        class _MissingFit(BaseInference):
+            def estimate(self) -> Results:
+                return Results(ate=0.0)
+
+        with pytest.raises(TypeError, match="abstract"):
+            _MissingFit()  # type: ignore[abstract]
+
+    def test_subclass_missing_both_fails(self) -> None:
+        """A subclass implementing neither fit nor estimate cannot instantiate."""
+
+        class _MissingBoth(BaseInference):
+            pass
+
+        with pytest.raises(TypeError, match="abstract"):
+            _MissingBoth()  # type: ignore[abstract]
+
+    def test_estimate_returns_results(self) -> None:
+        """A fitted subclass produces a Results from estimate()."""
+        inf = ConcreteInference()
+        df = pd.DataFrame({"treatment": [1, 0]})
+        assignment = CRDAssignment(
+            data=df, treatment_col="treatment", design=None
+        )
+        inf.fit(assignment)
+        result = inf.estimate()
+        assert isinstance(result, Results)
+
+
+class TestBaseInferenceValidateAssignmentType:
+    """Tests for BaseInference._validate_assignment_type.
+
+    Mirrors TestBaseEstimatorValidateAssignmentType to confirm parity
+    between the two ABCs after the Phase 4 prep refactor.
+    """
+
+    def test_does_not_raise_on_correct_type(self) -> None:
+        """No exception when assignment matches the expected type."""
+        inf = ConcreteInference()
+        assignment = _FakeCRDAssignment()
+        inf._validate_assignment_type(assignment, _FakeCRDAssignment)
+
+    def test_does_not_raise_when_type_in_tuple(self) -> None:
+        """No exception when assignment matches one type in a tuple."""
+        inf = ConcreteInference()
+        assignment = _FakeBlockedAssignment()
+        inf._validate_assignment_type(
+            assignment,
+            (_FakeCRDAssignment, _FakeBlockedAssignment),
+        )
+
+    def test_raises_on_single_type_mismatch(self) -> None:
+        """Raises DesignEstimatorMismatch when single type does not match."""
+        inf = ConcreteInference()
+        assignment = _FakeFactorialAssignment()
+        with pytest.raises(DesignEstimatorMismatch):
+            inf._validate_assignment_type(assignment, _FakeCRDAssignment)
+
+    def test_raises_on_tuple_type_mismatch(self) -> None:
+        """Raises DesignEstimatorMismatch when none of tuple types match."""
+        inf = ConcreteInference()
+        assignment = _FakeFactorialAssignment()
+        with pytest.raises(DesignEstimatorMismatch):
+            inf._validate_assignment_type(
+                assignment,
+                (_FakeCRDAssignment, _FakeBlockedAssignment),
+            )
+
+    def test_error_message_lists_all_types_in_tuple(self) -> None:
+        """Error message must include every expected type name when tuple."""
+        inf = ConcreteInference()
+        assignment = _FakeFactorialAssignment()
+        with pytest.raises(DesignEstimatorMismatch) as excinfo:
+            inf._validate_assignment_type(
+                assignment,
+                (_FakeCRDAssignment, _FakeBlockedAssignment),
+            )
+        msg = str(excinfo.value)
+        assert "_FakeCRDAssignment" in msg
+        assert "_FakeBlockedAssignment" in msg
+
+    def test_error_message_includes_caller_class_name(self) -> None:
+        """Error message must include the inference class name."""
+        inf = ConcreteInference()
+        assignment = _FakeFactorialAssignment()
+        with pytest.raises(DesignEstimatorMismatch) as excinfo:
+            inf._validate_assignment_type(assignment, _FakeCRDAssignment)
+        assert "ConcreteInference" in str(excinfo.value)
+
+
+class TestValidateAssignmentTypeSnapshot:
+    """Snapshot tests for the DesignEstimatorMismatch error message.
+
+    Phase 4 prep refactored the validation logic into a module-level
+    helper. These tests pin the error message format to catch silent
+    string drift during the refactor or in future changes. Both
+    BaseEstimator and BaseInference must produce identical message
+    structure.
+    """
+
+    def test_estimator_single_type_message_contains_key_parts(self) -> None:
+        """Error message for single expected type contains the basics."""
+        estimator = ConcreteEstimator()
+        with pytest.raises(DesignEstimatorMismatch) as excinfo:
+            estimator._validate_assignment_type(
+                "not an assignment", CRDAssignment
+            )
+        msg = str(excinfo.value)
+        assert "ConcreteEstimator" in msg
+        assert "CRDAssignment" in msg
+
+    def test_estimator_tuple_message_lists_all_types(self) -> None:
+        """Error message for tuple expected types lists each name."""
+        estimator = ConcreteEstimator()
+        with pytest.raises(DesignEstimatorMismatch) as excinfo:
+            estimator._validate_assignment_type(
+                "not an assignment",
+                (CRDAssignment, _FakeBlockedAssignment),
+            )
+        msg = str(excinfo.value)
+        assert "CRDAssignment" in msg
+        assert "_FakeBlockedAssignment" in msg
+
+    def test_inference_single_type_message_contains_key_parts(self) -> None:
+        """BaseInference produces the same message structure."""
+        inf = ConcreteInference()
+        with pytest.raises(DesignEstimatorMismatch) as excinfo:
+            inf._validate_assignment_type(
+                "not an assignment", _FakeCRDAssignment
+            )
+        msg = str(excinfo.value)
+        assert "ConcreteInference" in msg
+        assert "_FakeCRDAssignment" in msg
+
+    def test_estimator_and_inference_messages_have_same_structure(
+        self,
+    ) -> None:
+        """Both ABCs delegate to the same helper, so messages match shape."""
+        estimator = ConcreteEstimator()
+        inf = ConcreteInference()
+
+        with pytest.raises(DesignEstimatorMismatch) as exc_est:
+            estimator._validate_assignment_type(
+                "not an assignment", _FakeCRDAssignment
+            )
+        with pytest.raises(DesignEstimatorMismatch) as exc_inf:
+            inf._validate_assignment_type(
+                "not an assignment", _FakeCRDAssignment
+            )
+
+        msg_est = str(exc_est.value)
+        msg_inf = str(exc_inf.value)
+
+        # Both must mention the expected type and the received type.
+        assert "_FakeCRDAssignment" in msg_est
+        assert "_FakeCRDAssignment" in msg_inf
+        assert "str" in msg_est  # received_type for "not an assignment"
+        assert "str" in msg_inf
+
+        # Each carries its own caller class name.
+        assert "ConcreteEstimator" in msg_est
+        assert "ConcreteInference" in msg_inf
