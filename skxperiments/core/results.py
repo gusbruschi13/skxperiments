@@ -132,6 +132,15 @@ class Results:
         - ``"family_wise_alpha"`` : float. The family-wise alpha used by
           ``MultipleTestingCorrection``.
         - ``"n_tests"`` : int. The size of the testing family.
+
+    *Written by inference classes (Phase 4.3):*
+
+        - ``"variance_type"`` : str, ``"neyman"`` or
+          ``"neyman_stratified"``. The variance estimator used by
+          ``NeymanCI``: ``"neyman"`` for CRD (two-sample conservative
+          variance) and ``"neyman_stratified"`` for blocked designs
+          (size-weighted sum of within-block variances). ``NeymanCI``
+          also propagates ``"inference_mode"`` (see Phase 3).
     """
 
     def __init__(
