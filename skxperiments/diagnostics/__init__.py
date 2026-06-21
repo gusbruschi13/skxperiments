@@ -1,7 +1,9 @@
 """Diagnostics module for checking design and estimation assumptions.
 
-This module will contain tools for balance checks, covariate diagnostics,
+This module contains tools for balance checks, covariate diagnostics,
 and other pre- and post-estimation diagnostics.
 """
 
-__all__: list[str] = []
+from skxperiments.diagnostics.srm import SRMResult, SRMTest
+
+__all__ = ["SRMResult", "SRMTest"]
