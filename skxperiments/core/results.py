@@ -141,6 +141,19 @@ class Results:
           variance) and ``"neyman_stratified"`` for blocked designs
           (size-weighted sum of within-block variances). ``NeymanCI``
           also propagates ``"inference_mode"`` (see Phase 3).
+
+    *Written by inference classes (Phase 4.4):*
+
+        - ``"method"`` : str, ``"percentile"`` or ``"bca"``. The bootstrap
+          interval method used by ``BootstrapCI``.
+        - ``"n_resamples"`` : int. Number of bootstrap resamples.
+        - ``"bootstrap_distribution"`` : np.ndarray. Resampled ATEs;
+          length equals ``n_resamples``.
+        - ``"bias_correction"`` : float. BCa bias-correction ``z0``
+          (present only when ``method="bca"``).
+        - ``"acceleration"`` : float. BCa acceleration ``a`` (present only
+          when ``method="bca"``). ``BootstrapCI`` always sets
+          ``inference_mode="superpopulation"``.
     """
 
     def __init__(
