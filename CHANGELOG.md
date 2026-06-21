@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 4.4: Bootstrap confidence intervals
+
+- **`BootstrapCI`** (`skxperiments.inference.bootstrap`): `BaseInference`
+  subclass that approximates the sampling distribution of an estimator's
+  ATE by resampling units with replacement within each treatment arm
+  (within each block-by-arm stratum for blocked designs), then forms a
+  `"percentile"` or `"bca"` (default) confidence interval. The bootstrap
+  is the library's explicit **superpopulation** method: it ignores the
+  randomization mechanism and always reports
+  `inference_mode="superpopulation"`.
+- **Estimator-agnostic**: any estimator producing a scalar `Results.ate`
+  is supported (`DifferenceInMeans`, `BlockedDifferenceInMeans`,
+  `LinEstimator`, `CUPED`); each resample is turned back into an
+  `Assignment` and the estimator is refitted. Multi-effect estimators are
+  rejected.
+- **BCa**: bias-correction `z0` from the bootstrap distribution and
+  acceleration `a` from a leave-one-out jackknife (Efron 1987). The
+  degenerate case (bias-correction undefined) raises `InvalidDesignError`
+  suggesting `method="percentile"`.
+- **Output**: bootstrap standard error, percentile/BCa interval, and an
+  approximate two-sided bootstrap p-value (achieved significance level).
+- **Fail fast**: `InsufficientDataError` when any arm (CRD) or block-by-arm
+  stratum (blocked) has fewer than 2 units; matched-pair blocked designs
+  are not supported by the within-stratum bootstrap in v1 (see `ROADMAP.md`).
+- **Reserved keys schema in `Results.extra`** extended with `method`,
+  `n_resamples`, `bootstrap_distribution`, and (BCa only)
+  `bias_correction` and `acceleration`. Documented in the `Results`
+  docstring.
+
 ### Added — Phase 4.3: Neyman confidence intervals
 
 - **`NeymanCI`** (`skxperiments.inference.neyman`): `BaseInference`
@@ -87,6 +116,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to revisit, and v2 plans. Organized by phase with What / Why deferred /
   Trigger structure. Linked from `README.md`.
 
+### Tests — Phase 4.4
+
+- 36 tests for `BootstrapCI` across 10 grouping classes covering creation
+  and parameter validation, assignment-type and multi-effect rejection,
+  insufficient-data fail-fast (including matched-pair blocks), the
+  degenerate BCa case, fitted attributes, estimate output (percentile and
+  BCa extras, superpopulation override), reproducibility, percentile-vs-BCa
+  agreement on symmetric data (slow), blocked designs, estimator-agnostic
+  smoke tests (`LinEstimator`, `CUPED`), assignment immutability, and slow
+  numerics (Monte Carlo coverage and agreement of the bootstrap SE with the
+  `NeymanCI` SE).
+
 ### Tests — Phase 4.3
 
 - 30 tests for `NeymanCI` across 8 grouping classes covering creation and
@@ -124,7 +165,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 
-- Phase 4.4: `BootstrapCI` (percentile, BCa); explicitly superpopulation inference.
 - Phase 4.5: `SequentialTest` (mSPRT, always-valid intervals) — under evaluation;
   may be deferred to v2 (see `ROADMAP.md`).
 - Phase 5: diagnostics (`SRMTest`, `AATest`, `BalanceReport`).

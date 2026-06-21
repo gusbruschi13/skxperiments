@@ -12,7 +12,7 @@ statistical models come second.
 
 ## Status
 
-Active development. Phases 0–3 complete; Phases 4.1–4.3 complete; Phases 4.4–4.5 in planning.
+Active development. Phases 0–3 complete; Phases 4.1–4.4 complete; Phase 4.5 in planning.
 See [Project status](#project-status) below for details.
 
 ## Installation
@@ -82,12 +82,12 @@ discovery rate when reporting multiple effects, wrap the result in
 | 1 | Core (`Assignment`, `Results`, base classes) | ✓ Complete |
 | 2 | Designs (CRD, BlockedCRD, ReRandomizedCRD, FactorialDesign, balance, power) | ✓ Complete |
 | 3 | Estimators (DIM, BlockedDIM, Factorial, Lin, CUPED) | ✓ Complete |
-| 4 | Inference (RandomizationTest, MultipleTestingCorrection, NeymanCI, BootstrapCI, sequential) | 🚧 In progress (4.1–4.3 complete) |
+| 4 | Inference (RandomizationTest, MultipleTestingCorrection, NeymanCI, BootstrapCI, sequential) | 🚧 In progress (4.1–4.4 complete) |
 | 5 | Diagnostics (SRM, A/A test, balance report) | Planned |
 | 6 | Pipeline composition | Planned |
 | 7 | Visualization and reporting | Planned |
 
-Test coverage: 558 tests, all passing on CI.
+Test coverage: 594 tests, all passing on CI.
 
 See [`ROADMAP.md`](ROADMAP.md) for deferred features and v2 plans, and `CHANGELOG.md` for the
 full history of changes.
@@ -132,15 +132,19 @@ intervals come from inference classes in `skxperiments.inference`.
   rerandomized) and stratified variance for `BlockedAssignment`, consistent with the
   size-weighted ATE of `BlockedDifferenceInMeans`. Wraps `DifferenceInMeans` or
   `BlockedDifferenceInMeans`; rejects superpopulation mode (use `BootstrapCI`).
+- **`BootstrapCI`** — Bootstrap confidence interval (percentile or BCa) for
+  superpopulation inference. Resamples units within each arm (within each
+  block-by-arm stratum for blocked designs) and refits the estimator, so it
+  works with any scalar estimator (`DifferenceInMeans`, `BlockedDifferenceInMeans`,
+  `LinEstimator`, `CUPED`).
 
 ## What's coming
 
 ### Phase 4 — Inference (continued)
 
-`RandomizationTest`, `MultipleTestingCorrection`, and `NeymanCI` are implemented. The
-remaining inference classes will extend the confidence-interval toolkit:
+`RandomizationTest`, `MultipleTestingCorrection`, `NeymanCI`, and `BootstrapCI` are
+implemented. The remaining inference class is under evaluation:
 
-- **`BootstrapCI`** — Percentile, BCa (superpopulation inference).
 - **`SequentialTest`** — mSPRT and always-valid intervals (under evaluation; may be
   deferred to v2 per `ROADMAP.md`).
 

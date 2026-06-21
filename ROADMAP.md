@@ -159,16 +159,31 @@ Items are grouped by phase. Each item lists:
   matter. Implementation cost > value.
 - **Trigger**: Users with N < 20 and need to publish exact p-values.
 
+### `BootstrapCI` for matched-pair / small-stratum blocked designs
+
+- **What**: `BootstrapCI` resamples within each block-by-arm stratum and
+  requires at least 2 units per stratum. Matched-pair blocked designs
+  (1 treated + 1 control per block) therefore raise
+  `InsufficientDataError`.
+- **Why deferred**: A within-stratum bootstrap is degenerate when a
+  stratum holds a single unit. The fix is a block-level (cluster)
+  bootstrap that resamples whole blocks with replacement — a different
+  resampling scheme with its own bias/variance trade-offs.
+- **Trigger**: User demand for bootstrap CIs on matched-pair or
+  small-block designs. Likely a `block_resample=True` option or a
+  dedicated cluster-bootstrap path.
+
 ### `BootstrapCI` studentized variant
 
 - **What**: v1 supports percentile and BCa. Studentized requires the
   estimator to expose a standard error, which Phase 3 estimators don't.
-- **Why deferred**: Studentized requires either bootstrap-of-bootstrap
-  (slow) or an analytical SE. As of Phase 4.3, `NeymanCI` populates
-  `Results.se` for CRD and blocked designs, so the analytical-SE path is
-  now available for the studentized variant.
-- **Trigger**: Phase 4.4 — implement the studentized variant on top of
-  the `Results.se` field now produced by `NeymanCI`.
+- **Why deferred**: Phase 4.4 shipped `BootstrapCI` with percentile and
+  BCa only. Studentized requires a per-resample standard error (either a
+  nested bootstrap, which is slow, or an analytical SE recomputed on each
+  resample, e.g. the Neyman variance). It was cut to keep 4.4 scoped.
+- **Trigger**: Fast-follow to Phase 4.4 (or v2). The analytical-SE path
+  is now viable since `NeymanCI` computes a closed-form variance that
+  could be evaluated per resample.
 
 ### `MultipleTestingCorrection` with Benjamini-Yekutieli
 
@@ -236,11 +251,13 @@ Items are grouped by phase. Each item lists:
 
 ## Cross-cutting
 
-### Performance optimization of `RandomizationTest`
+### Performance optimization of resampling inference (`RandomizationTest`, `BootstrapCI`)
 
-- **What**: Current loop is pure Python over `n_permutations` calls to
-  `assignment.draw()` and `estimator.fit()`. No vectorization, no
-  parallelism, no caching of design matrices.
+- **What**: Both classes loop in pure Python, refitting `estimator.fit()`
+  once per resample — `n_permutations` calls to `assignment.draw()` for
+  `RandomizationTest`, and `n_resamples` (plus an `n_obs` leave-one-out
+  jackknife for BCa) assignment reconstructions for `BootstrapCI`. No
+  vectorization, no parallelism, no caching of design matrices.
 - **Why deferred**: Premature. Profiling on real workloads should drive
   optimization, not speculation.
 - **Trigger**: Real reports of `RandomizationTest` being too slow.
