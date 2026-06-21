@@ -102,7 +102,7 @@ class RandomizationTest(BaseInference):
     -----
     **Sharp null vs. Neyman null.** This class tests Fisher's sharp
     null of no individual treatment effect, not Neyman's null of zero
-    average treatment effect. ``BootstrapCI`` (Phase 4.3) will offer
+    average treatment effect. ``BootstrapCI`` (Phase 4.4) will offer
     superpopulation inference.
 
     **Rerandomization.** When ``assignment`` is a ``CRDAssignment``

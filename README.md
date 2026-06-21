@@ -12,7 +12,7 @@ statistical models come second.
 
 ## Status
 
-Active development. Phases 0–3 complete; Phases 4.1–4.2 complete; Phases 4.3–4.5 in planning.
+Active development. Phases 0–3 complete; Phases 4.1–4.3 complete; Phases 4.4–4.5 in planning.
 See [Project status](#project-status) below for details.
 
 ## Installation
@@ -82,12 +82,12 @@ discovery rate when reporting multiple effects, wrap the result in
 | 1 | Core (`Assignment`, `Results`, base classes) | ✓ Complete |
 | 2 | Designs (CRD, BlockedCRD, ReRandomizedCRD, FactorialDesign, balance, power) | ✓ Complete |
 | 3 | Estimators (DIM, BlockedDIM, Factorial, Lin, CUPED) | ✓ Complete |
-| 4 | Inference (RandomizationTest, MultipleTestingCorrection, NeymanCI, BootstrapCI, sequential) | 🚧 In progress (4.1, 4.2 complete) |
+| 4 | Inference (RandomizationTest, MultipleTestingCorrection, NeymanCI, BootstrapCI, sequential) | 🚧 In progress (4.1–4.3 complete) |
 | 5 | Diagnostics (SRM, A/A test, balance report) | Planned |
 | 6 | Pipeline composition | Planned |
 | 7 | Visualization and reporting | Planned |
 
-Test coverage: 528 tests, all passing on CI.
+Test coverage: 558 tests, all passing on CI.
 
 See [`ROADMAP.md`](ROADMAP.md) for deferred features and v2 plans, and `CHANGELOG.md` for the
 full history of changes.
@@ -127,16 +127,19 @@ intervals come from inference classes in `skxperiments.inference`.
   `FactorialEstimator` after inference) or a list of scalar `Results` (for comparing
   independent experiments). Clips corrected p-values to `[0, 1]`; preserves originals
   in `Results.extra["original_p_values"]`. Default method is Holm.
+- **`NeymanCI`** — Neyman variance-based two-sided Wald confidence interval and p-value
+  for finite-population inference. Conservative variance for `CRDAssignment` (including
+  rerandomized) and stratified variance for `BlockedAssignment`, consistent with the
+  size-weighted ATE of `BlockedDifferenceInMeans`. Wraps `DifferenceInMeans` or
+  `BlockedDifferenceInMeans`; rejects superpopulation mode (use `BootstrapCI`).
 
 ## What's coming
 
 ### Phase 4 — Inference (continued)
 
-`RandomizationTest` and `MultipleTestingCorrection` are implemented. The remaining
-inference classes will produce confidence intervals beyond the permutation p-value:
+`RandomizationTest`, `MultipleTestingCorrection`, and `NeymanCI` are implemented. The
+remaining inference classes will extend the confidence-interval toolkit:
 
-- **`NeymanCI`** — Finite-population variance for CRD and blocked CRD; CUPED-specific
-  variance via internal branch.
 - **`BootstrapCI`** — Percentile, BCa (superpopulation inference).
 - **`SequentialTest`** — mSPRT and always-valid intervals (under evaluation; may be
   deferred to v2 per `ROADMAP.md`).

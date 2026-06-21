@@ -109,6 +109,22 @@ Items are grouped by phase. Each item lists:
 
 ## Inference (Phase 4)
 
+### `NeymanCI` with `CUPED` and `LinEstimator`
+
+- **What**: `NeymanCI` v1 accepts only `DifferenceInMeans` and
+  `BlockedDifferenceInMeans`, validated by a whitelist at construction.
+  `CUPED` and `LinEstimator` are rejected via `DesignEstimatorMismatch`.
+- **Why deferred**: Each implies a different variance estimator — CUPED
+  needs Neyman's variance on the adjusted outcome
+  `Y - theta * (X_pre - mean(X_pre))`, and Lin needs the HC-robust
+  regression variance — neither of which is the two-sample/stratified
+  formula `NeymanCI` v1 implements. Sniffing `Results.extra["theta"]` to
+  switch formulas was considered and rejected as implicit coupling.
+- **Trigger**: When users need analytical CIs for covariate-adjusted
+  estimators. Likely a per-estimator variance contract (estimators expose
+  their own variance) or a dedicated path, rather than special-casing
+  inside `NeymanCI`.
+
 ### `RandomizationTest` with `FactorialAssignment`
 
 - **What**: v1 rejects `FactorialAssignment`. Multi-effect estimators
@@ -148,11 +164,11 @@ Items are grouped by phase. Each item lists:
 - **What**: v1 supports percentile and BCa. Studentized requires the
   estimator to expose a standard error, which Phase 3 estimators don't.
 - **Why deferred**: Studentized requires either bootstrap-of-bootstrap
-  (slow) or analytical SE from the estimator (not available). The
-  cleanest path is to wait until Phase 4.3 (`NeymanCI`) makes SEs
-  available.
-- **Trigger**: After Phase 4.3 ships, revisit with the `Results.se`
-  field populated.
+  (slow) or an analytical SE. As of Phase 4.3, `NeymanCI` populates
+  `Results.se` for CRD and blocked designs, so the analytical-SE path is
+  now available for the studentized variant.
+- **Trigger**: Phase 4.4 — implement the studentized variant on top of
+  the `Results.se` field now produced by `NeymanCI`.
 
 ### `MultipleTestingCorrection` with Benjamini-Yekutieli
 
@@ -253,9 +269,10 @@ Items are grouped by phase. Each item lists:
 - **Why deferred**: Decided in Phase 3 that the read-side (Phase 4
   inference classes) will consume it from `Results.extra`. The "live on
   BaseInference" plan was redundant.
-- **Trigger**: If Phase 4.3 (`NeymanCI`) reveals that some inference
-  classes need to override the metadata, reconsider whether
-  `inference_mode` should be a first-class attribute.
+- **Trigger**: Phase 4.3 (`NeymanCI`) consumed `inference_mode` from
+  `Results.extra` as planned and did not need to override it (it only
+  reads the value to reject `"superpopulation"`). Reconsider a
+  first-class attribute only if a later inference class needs to set it.
 
 ### CI-CD: required status checks with `paths-ignore`
 

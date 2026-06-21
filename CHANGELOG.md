@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 4.3: Neyman confidence intervals
+
+- **`NeymanCI`** (`skxperiments.inference.neyman`): `BaseInference`
+  subclass that wraps a scalar estimator and builds a two-sided Wald
+  confidence interval and p-value from Neyman's variance estimator,
+  dispatched by assignment type. CRD uses the conservative
+  `s_t^2 / n_t + s_c^2 / n_c` (`ddof=1`); blocked designs use the
+  stratified `sum_b (N_b / N)^2 * V_b`, consistent with the size-weighted
+  ATE of `BlockedDifferenceInMeans` (Imbens & Rubin 2015, ch. 6 and 9).
+  The interval uses the normal quantile (`scipy.stats.norm`).
+- **Estimator whitelist**: v1 accepts only `DifferenceInMeans` and
+  `BlockedDifferenceInMeans`, validated at construction with
+  `DesignEstimatorMismatch`. `CUPED` and `LinEstimator` support is
+  deferred (see `ROADMAP.md`).
+- **Finite-population scope**: an estimator reporting
+  `inference_mode="superpopulation"` is rejected with a message
+  redirecting to `BootstrapCI` (Phase 4.4). The Neyman formula is
+  identical under both interpretations; the restriction is a scope choice.
+- **Fail fast**: `InsufficientDataError` when any arm (CRD) or any arm
+  within a block (blocked) has fewer than 2 observations.
+- **Reserved keys schema in `Results.extra`** extended with
+  `variance_type` (`"neyman"` or `"neyman_stratified"`); `NeymanCI` also
+  propagates `inference_mode`. Documented in the `Results` docstring.
+
 ### Added — Phase 4.2: Multiple testing correction
 
 - **`MultipleTestingCorrection`** (`skxperiments.inference.multiple`):
@@ -63,6 +87,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to revisit, and v2 plans. Organized by phase with What / Why deferred /
   Trigger structure. Linked from `README.md`.
 
+### Tests — Phase 4.3
+
+- 30 tests for `NeymanCI` across 8 grouping classes covering creation and
+  alpha validation, estimator-whitelist and assignment-type rejection
+  (factorial, multi-effect, superpopulation), insufficient-data fail-fast,
+  hand-checked CRD and stratified-blocked variance, the Wald CI/p-value,
+  rerandomization acceptance, assignment immutability, and slow Monte
+  Carlo coverage (CRD and blocked, near the nominal 95%).
+
 ### Tests — Phase 4.2
 
 - 25 tests for `MultipleTestingCorrection` across 7 grouping classes
@@ -91,8 +124,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 
-- Phase 4.3: `NeymanCI` for finite-population variance under CRD and blocked CRD;
-  CUPED-specific variance via internal branch.
 - Phase 4.4: `BootstrapCI` (percentile, BCa); explicitly superpopulation inference.
 - Phase 4.5: `SequentialTest` (mSPRT, always-valid intervals) — under evaluation;
   may be deferred to v2 (see `ROADMAP.md`).
