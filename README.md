@@ -2,7 +2,8 @@
 
 > Randomization-based experimental design and causal inference, sklearn-style.
 
-![CI](https://github.com/username/skxperiments/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/gusbruschi13/skxperiments/actions/workflows/ci.yml/badge.svg)](https://github.com/gusbruschi13/skxperiments/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/skxperiments?include_prereleases)](https://pypi.org/project/skxperiments/)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Status](https://img.shields.io/badge/status-alpha-orange)
 
@@ -12,16 +13,26 @@ statistical models come second.
 
 ## Status
 
-The v1 feature set is complete: Phases 0–7 are done (sequential testing is
-deferred to v2). See [Project status](#project-status) below for details.
+The v1 feature set is complete: Phases 0 to 7 are done (sequential testing is
+deferred to v2). A pre-release (`0.1.0.dev0`) is on PyPI. See
+[Project status](#project-status) below for details.
 
 ## Installation
 
+The current release is a pre-release, so pip needs `--pre`:
+
 ```bash
-pip install skxperiments
+pip install --pre skxperiments
 ```
 
-Requires Python 3.10+. Dependencies: `numpy`, `pandas`, `scipy`.
+For the plotting and reporting features, include the `viz` extra:
+
+```bash
+pip install --pre "skxperiments[viz]"
+```
+
+Requires Python 3.10+. Core dependencies: `numpy`, `pandas`, `scipy`
+(`matplotlib` is optional and comes with `viz`).
 
 ## Quick start
 
