@@ -10,6 +10,9 @@ para quem está começando em experimentação, não só uma referência.
 > **Status:** começamos com Markdown e notebooks. A intenção é evoluir para um
 > site (Quarto ou mkdocs) depois; o conteúdo já é portável para lá.
 
+**Guias:** [como escolher](escolhendo.md) (design, estimador, inferência) e
+[glossário](glossario.md).
+
 ---
 
 ## Duas tradições de "DoE"
@@ -33,7 +36,9 @@ médias da otimização de processo.
 ## Trilha de aprendizado (notebooks)
 
 Cada notebook ensina um conceito de experimentação e a API correspondente.
-Ficam em [`examples/pt-br/`](../../examples/pt-br/) e rodam no CI (nbmake).
+Ficam na trilha **for_starters** (dados simulados, didática) em
+[`examples/for_starters/pt-br/`](../../examples/for_starters/pt-br/) e rodam no
+CI (nbmake). Uma trilha com **dados reais** virá depois.
 
 | # | Notebook | Conceito |
 |---|---|---|
