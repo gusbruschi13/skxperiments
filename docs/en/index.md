@@ -10,6 +10,9 @@ material for people new to experimentation, not just a reference.
 > **Status:** we start with Markdown and notebooks. The plan is to grow into a
 > site (Quarto or mkdocs) later; the content is already portable.
 
+**Guides:** [how to choose](choosing.md) (design, estimator, inference) and
+[glossary](glossary.md).
+
 ---
 
 ## Two traditions of "DoE"
@@ -34,7 +37,9 @@ cell-mean *interaction plot* of process optimization.
 ## Learning path (notebooks)
 
 Each notebook teaches an experimentation concept and the matching API. They
-live in [`examples/en/`](../../examples/en/) and run in CI (nbmake).
+live in the **for_starters** track (simulated data, didactic) at
+[`examples/for_starters/en/`](../../examples/for_starters/en/) and run in CI
+(nbmake). A **real-data** track will follow.
 
 | # | Notebook | Concept |
 |---|---|---|

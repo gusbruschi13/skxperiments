@@ -62,6 +62,12 @@ use `ReRandomizedCRD` (Morgan & Rubin 2012). `RandomizationTest` works with all 
 discovery rate when reporting multiple effects, wrap the result in
 `MultipleTestingCorrection`.
 
+## Documentation and tutorials
+
+Learning-path notebooks (bilingual, Portuguese and English) live in
+[`examples/for_starters/`](examples/for_starters/); conceptual docs (a glossary
+and a "how to choose" guide) are in [`docs/`](docs/README.md).
+
 ## Design philosophy
 
 1. **The assignment mechanism is primary**, not the statistical model.
