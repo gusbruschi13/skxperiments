@@ -9,8 +9,20 @@ function is called.
 
 from skxperiments.reporting.plots import (
     plot_balance,
+    plot_effect,
+    plot_forest,
+    plot_interaction,
     plot_null_distribution,
+    plot_power_curve,
     plot_srm,
 )
 
-__all__ = ["plot_balance", "plot_null_distribution", "plot_srm"]
+__all__ = [
+    "plot_balance",
+    "plot_effect",
+    "plot_forest",
+    "plot_interaction",
+    "plot_null_distribution",
+    "plot_power_curve",
+    "plot_srm",
+]
