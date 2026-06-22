@@ -36,4 +36,4 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Execute example notebooks
-        run: pytest --nbmake examples/
+        run: pytest --nbmake --no-cov examples/
