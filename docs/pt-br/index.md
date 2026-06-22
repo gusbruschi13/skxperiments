@@ -51,23 +51,8 @@ Ficam em [`examples/pt-br/`](../../examples/pt-br/) e rodam no CI (nbmake).
 
 ---
 
-## Glossário (em construção)
+## Glossário
 
-- **ATE** (*Average Treatment Effect*): efeito médio do tratamento na
-  população de interesse.
-- **Potential outcomes** (`Y(0)` e `Y(1)`): os dois resultados que uma unidade
-  *teria* sob controle e sob tratamento; só um é observado.
-- **População finita vs. superpopulação**: inferir sobre *estas* unidades
-  (finita; Neyman) vs. sobre uma população maior da qual elas são amostra
-  (superpopulação; bootstrap).
-- **Sharp null**: hipótese nula forte de Fisher, efeito **zero em todas** as
-  unidades (testada pelo `RandomizationTest`).
-- **SMD** (*Standardized Mean Difference*): diferença de médias padronizada,
-  usada para checar equilíbrio de covariáveis.
-- **SRM** (*Sample Ratio Mismatch*): a alocação observada destoa da pretendida,
-  um alarme de bug de implementação.
-- **FWER vs. FDR**: controlar a chance de **qualquer** falso-positivo
-  (family-wise) vs. a **proporção** de falsos-positivos entre as descobertas.
-
-*(Será expandido no Passo 6, com guias de decisão: qual design, estimador e
-inferência escolher.)*
+Os termos centrais (potential outcomes, ATE, população finita vs.
+superpopulação, sharp null, SMD, SRM, FWER/FDR) estão em
+[`glossario.md`](glossario.md).
