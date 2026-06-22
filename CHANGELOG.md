@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 5: Diagnostics
+
+- **`SRMTest`** (`skxperiments.diagnostics.srm`): Sample Ratio Mismatch
+  check via Pearson's chi-squared, comparing observed arm/cell counts to
+  the design's intended allocation. Two-arm (CRD/Blocked) and factorial
+  designs; expected allocation inferred from `design_.p` or a uniform
+  split over cells, or supplied explicitly. Default threshold 0.001 (the
+  industry SRM convention). Returns `SRMResult`.
+- **`BalanceReport`** (`skxperiments.diagnostics.balance_report`): wraps
+  `check_balance` to report the standardized mean difference (SMD) per
+  covariate and flag covariates with `|SMD| > threshold` (default 0.1,
+  Austin 2009). Constant covariates (undefined SMD) are surfaced as
+  warnings. Two-arm only; rejects factorial. Returns `BalanceResult`
+  (the table is exposed via `to_dataframe` for the Phase 7 Love plot).
+- **`AATest`** (`skxperiments.diagnostics.aa_test`): re-randomizes a
+  design on fixed data and runs a wrapped inference each time, checking
+  calibration. The false-positive rate is compared to `alpha` with an
+  exact binomial test (flag below `meta_threshold`, default 0.001), and
+  p-value uniformity is reported via a Kolmogorov-Smirnov test (secondary
+  warning). Returns `AAResult`.
+- Each diagnostic exposes a dedicated frozen result dataclass with
+  `summary`/`to_dict` and a `to_diagnostics_report()` mapping into the
+  existing `DiagnosticsReport` (for the Phase 6 pipeline). `Results` is
+  left untouched: diagnostics are not estimands.
+
 ### Added — Phase 4.4: Bootstrap confidence intervals
 
 - **`BootstrapCI`** (`skxperiments.inference.bootstrap`): `BaseInference`
@@ -116,6 +141,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to revisit, and v2 plans. Organized by phase with What / Why deferred /
   Trigger structure. Linked from `README.md`.
 
+### Tests — Phase 5
+
+- 61 tests across `tests/diagnostics/`: 23 for `SRMTest` (creation/
+  validation, design-inferred and explicit expectations, factorial,
+  the result surface, unsupported input), 20 for `BalanceReport`
+  (balanced/imbalanced detection, threshold control, covariate subsets,
+  constant covariates, blocked designs, factorial rejection, NaN
+  propagation, result surface), and 18 for `AATest` (creation/validation,
+  calibrated-pipeline calibration, reproducibility, miscalibration flag,
+  no-p-value rejection, result surface, and a slow nested run with
+  `RandomizationTest`).
+
 ### Tests — Phase 4.4
 
 - 36 tests for `BootstrapCI` across 10 grouping classes covering creation
@@ -165,11 +202,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 
-- Phase 4.5: `SequentialTest` (mSPRT, always-valid intervals) — under evaluation;
-  may be deferred to v2 (see `ROADMAP.md`).
-- Phase 5: diagnostics (`SRMTest`, `AATest`, `BalanceReport`).
 - Phase 6: `ExperimentPipeline` and `ExperimentComparison`.
 - Phase 7: visualization and HTML reporting.
+
+`SequentialTest` (mSPRT, always-valid intervals), originally penciled in as
+Phase 4.5, is **deferred to v2** — decided at the end of Phase 4.4 because
+sequential inference needs distributional assumptions and a streaming API
+that don't fit the finite-population, one-shot core. See `ROADMAP.md`.
 
 ## [0.1.0-dev] - 2026-05-31
 

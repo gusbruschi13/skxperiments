@@ -12,7 +12,8 @@ statistical models come second.
 
 ## Status
 
-Active development. Phases 0–3 complete; Phases 4.1–4.4 complete; Phase 4.5 in planning.
+Active development. Phases 0–3 complete; Phase 4 complete (4.1–4.4; sequential
+testing deferred to v2); Phase 5 (diagnostics) complete; Phases 6–7 planned.
 See [Project status](#project-status) below for details.
 
 ## Installation
@@ -82,12 +83,12 @@ discovery rate when reporting multiple effects, wrap the result in
 | 1 | Core (`Assignment`, `Results`, base classes) | ✓ Complete |
 | 2 | Designs (CRD, BlockedCRD, ReRandomizedCRD, FactorialDesign, balance, power) | ✓ Complete |
 | 3 | Estimators (DIM, BlockedDIM, Factorial, Lin, CUPED) | ✓ Complete |
-| 4 | Inference (RandomizationTest, MultipleTestingCorrection, NeymanCI, BootstrapCI, sequential) | 🚧 In progress (4.1–4.4 complete) |
-| 5 | Diagnostics (SRM, A/A test, balance report) | Planned |
+| 4 | Inference (RandomizationTest, MultipleTestingCorrection, NeymanCI, BootstrapCI) | ✓ Complete (4.1–4.4; sequential → v2) |
+| 5 | Diagnostics (SRMTest, AATest, BalanceReport) | ✓ Complete |
 | 6 | Pipeline composition | Planned |
 | 7 | Visualization and reporting | Planned |
 
-Test coverage: 594 tests, all passing on CI.
+Test coverage: 655 tests, all passing on CI.
 
 See [`ROADMAP.md`](ROADMAP.md) for deferred features and v2 plans, and `CHANGELOG.md` for the
 full history of changes.
@@ -138,20 +139,19 @@ intervals come from inference classes in `skxperiments.inference`.
   works with any scalar estimator (`DifferenceInMeans`, `BlockedDifferenceInMeans`,
   `LinEstimator`, `CUPED`).
 
+### Diagnostics (`skxperiments.diagnostics`)
+
+- **`SRMTest`** — Sample Ratio Mismatch via chi-squared: observed vs. intended arm/cell
+  allocation, flagged below a threshold (default 0.001). Two-arm and factorial.
+- **`BalanceReport`** — Standardized mean differences (SMD) per covariate, flagging
+  `|SMD| > 0.1`. Consumes `check_balance`; `to_dataframe()` feeds the Phase 7 Love plot.
+- **`AATest`** — A/A calibration: re-randomizes a design on fixed data, runs a wrapped
+  inference, and checks the false-positive rate (exact binomial test) and p-value
+  uniformity (KS).
+
+Each returns a dedicated result with `to_diagnostics_report()` for pipeline aggregation.
+
 ## What's coming
-
-### Phase 4 — Inference (continued)
-
-`RandomizationTest`, `MultipleTestingCorrection`, `NeymanCI`, and `BootstrapCI` are
-implemented. The remaining inference class is under evaluation:
-
-- **`SequentialTest`** — mSPRT and always-valid intervals (under evaluation; may be
-  deferred to v2 per `ROADMAP.md`).
-
-### Phase 5 — Diagnostics
-
-`SRMTest`, `AATest`, `BalanceReport`. The pipeline (Phase 6) will run `SRMTest` automatically
-before any estimation.
 
 ### Phase 6 — Pipeline
 

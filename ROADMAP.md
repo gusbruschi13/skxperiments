@@ -196,15 +196,19 @@ Items are grouped by phase. Each item lists:
 
 ### `SequentialTest` (mSPRT, always-valid intervals)
 
-- **What**: Originally planned as Phase 4.5; now under evaluation.
+- **What**: Originally planned as Phase 4.5; **deferred to v2** (decided
+  at the end of Phase 4.4).
 - **Why deferred**: Sequential tests require distributional assumptions
   (subgaussianity, normality) that break the "design dictates inference"
-  philosophy of the rest of the library. The implementation is also
-  inherently coupled to streaming/online use cases that need dedicated
-  API design.
-- **Trigger**: Decision point at the end of Phase 4.4. If sequential
-  tests are kept in scope, they need their own design phase. Possibly
-  better as a separate package.
+  philosophy of the rest of the library. They are also inherently coupled
+  to streaming/online use cases, which don't fit the one-shot
+  `fit(assignment) -> estimate()` contract — there is no time/arrival
+  dimension on a fixed finite-population `Assignment`. Both point to a
+  dedicated design rather than a fourth sibling of the existing inference
+  classes.
+- **Trigger**: A v2 effort with its own API design (a streaming
+  `update()`/`peek()` interface, or an `order_col` arrival convention),
+  possibly as a separate `skxperiments-sequential` package.
 
 ---
 
@@ -251,13 +255,16 @@ Items are grouped by phase. Each item lists:
 
 ## Cross-cutting
 
-### Performance optimization of resampling inference (`RandomizationTest`, `BootstrapCI`)
+### Performance optimization of resampling inference (`RandomizationTest`, `BootstrapCI`, `AATest`)
 
-- **What**: Both classes loop in pure Python, refitting `estimator.fit()`
-  once per resample — `n_permutations` calls to `assignment.draw()` for
+- **What**: These loop in pure Python, refitting `estimator.fit()` once
+  per resample — `n_permutations` calls to `assignment.draw()` for
   `RandomizationTest`, and `n_resamples` (plus an `n_obs` leave-one-out
   jackknife for BCa) assignment reconstructions for `BootstrapCI`. No
   vectorization, no parallelism, no caching of design matrices.
+  `AATest` makes it worse: wrapping a resampling inference nests the
+  loops, `O(n_simulations x n_resamples)` fits — hence the guidance to
+  prefer the analytic `NeymanCI` for routine A/A calibration.
 - **Why deferred**: Premature. Profiling on real workloads should drive
   optimization, not speculation.
 - **Trigger**: Real reports of `RandomizationTest` being too slow.
