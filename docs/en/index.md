@@ -52,23 +52,8 @@ live in [`examples/en/`](../../examples/en/) and run in CI (nbmake).
 
 ---
 
-## Glossary (work in progress)
+## Glossary
 
-- **ATE** (*Average Treatment Effect*): the average effect of the treatment in
-  the population of interest.
-- **Potential outcomes** (`Y(0)` and `Y(1)`): the two results a unit *would*
-  have under control and under treatment; only one is observed.
-- **Finite population vs. superpopulation**: inferring about *these* units
-  (finite; Neyman) vs. about a larger population they are sampled from
-  (superpopulation; bootstrap).
-- **Sharp null**: Fisher's strong null hypothesis, **zero effect for every**
-  unit (tested by `RandomizationTest`).
-- **SMD** (*Standardized Mean Difference*): standardized difference in means,
-  used to check covariate balance.
-- **SRM** (*Sample Ratio Mismatch*): the observed allocation departs from the
-  intended one, an implementation-bug alarm.
-- **FWER vs. FDR**: controlling the chance of **any** false positive
-  (family-wise) vs. the **proportion** of false positives among discoveries.
-
-*(To be expanded in Step 6, with decision guides: which design, estimator, and
-inference to choose.)*
+The core terms (potential outcomes, ATE, finite population vs.
+superpopulation, sharp null, SMD, SRM, FWER/FDR) live in
+[`glossary.md`](glossary.md).

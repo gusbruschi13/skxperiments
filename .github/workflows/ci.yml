@@ -19,6 +19,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Manual escape hatch: put [skip-lib] in the (head/merge) commit message
+    # to skip the library suite even when library files changed.
+    if: ${{ !contains(github.event.head_commit.message, '[skip-lib]') }}
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
