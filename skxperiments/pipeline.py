@@ -15,11 +15,14 @@ does not stop estimation; pass ``raise_on_flag=True`` to abort instead.
 
 from dataclasses import dataclass
 
+import pandas as pd
+
 from skxperiments.core.assignment import BaseAssignment
 from skxperiments.core.base import BaseInference, DiagnosticsReport
 from skxperiments.core.exceptions import InvalidDesignError, SkxperimentsError
 from skxperiments.core.results import Results
 from skxperiments.diagnostics.srm import SRMTest
+from skxperiments.inference.multiple import MultipleTestingCorrection
 
 
 @dataclass(frozen=True)
@@ -170,4 +173,194 @@ class ExperimentPipeline:
             results=results,
             diagnostics=combined,
             diagnostic_results=diagnostic_results,
+        )
+
+
+@dataclass(frozen=True, eq=False)
+class ComparisonResult:
+    """Result of comparing several independent experiments.
+
+    Attributes
+    ----------
+    corrected_results : dict
+        Mapping from experiment name to its multiple-testing-corrected
+        ``Results`` (corrected ``p_value``; original recorded in
+        ``Results.extra["original_p_values"]``).
+    correction : str
+        The correction method applied (``"bonferroni"``, ``"holm"``,
+        or ``"bh"``).
+    alpha : float
+        Family-wise significance level.
+    table : pd.DataFrame
+        One row per experiment with columns ``experiment``, ``ate``,
+        ``se``, ``ci_lower``, ``ci_upper``, ``p_value`` (original),
+        ``p_value_corrected``, and ``significant``.
+    """
+
+    corrected_results: dict
+    correction: str
+    alpha: float
+    table: pd.DataFrame
+
+    @property
+    def significant(self) -> list[str]:
+        """Names of experiments significant after correction."""
+        return [
+            row.experiment
+            for row in self.table.itertuples()
+            if row.significant
+        ]
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Return a copy of the comparison table."""
+        return self.table.copy()
+
+    def to_dict(self) -> dict:
+        """Return the summary fields as a plain dictionary."""
+        return {
+            "correction": self.correction,
+            "alpha": self.alpha,
+            "n_experiments": len(self.corrected_results),
+            "significant": self.significant,
+        }
+
+    def summary(self) -> "ComparisonResult":
+        """Print the comparison table and return self."""
+        print(f"Experiment Comparison (correction={self.correction}, "
+              f"alpha={self.alpha})")
+        print(self.table.to_string(index=False))
+        return self
+
+
+class ExperimentComparison:
+    """Compare several independent experiments with multiple-testing control.
+
+    Collects the scalar ATE/p-value of each experiment and applies a
+    multiple-testing correction across the family, so the family-wise
+    error rate (Bonferroni/Holm) or false discovery rate (BH) is
+    controlled across experiments.
+
+    Parameters
+    ----------
+    correction : {"holm", "bonferroni", "bh"}, optional
+        Correction method, by default ``"holm"``.
+    alpha : float, optional
+        Family-wise significance level, by default 0.05.
+
+    Notes
+    -----
+    v1 compares **independent experiments** (one scalar ATE each).
+    Subgroup analysis (multiple effects within a single experiment) is
+    deferred to v2 (see `ROADMAP.md`); multi-effect ``Results`` are
+    rejected here.
+    """
+
+    def __init__(
+        self,
+        correction: str = "holm",
+        alpha: float = 0.05,
+    ) -> None:
+        # Validates the method and alpha eagerly.
+        self._mtc = MultipleTestingCorrection(method=correction, alpha=alpha)
+        self.correction = correction
+        self.alpha = alpha
+
+    def run(self, results: dict) -> ComparisonResult:
+        """Compare a mapping of named experiment results.
+
+        Parameters
+        ----------
+        results : dict
+            Mapping from experiment name to a ``PipelineResult`` or a
+            scalar ``Results``. ``PipelineResult`` is unwrapped to its
+            ``results`` field.
+
+        Returns
+        -------
+        ComparisonResult
+
+        Raises
+        ------
+        InvalidDesignError
+            If ``results`` is not a non-empty dict, if any entry is not a
+            scalar ``Results``/``PipelineResult``, or if any lacks a
+            scalar p-value.
+        """
+        if not isinstance(results, dict):
+            raise InvalidDesignError(
+                f"results must be a dict {{name: PipelineResult | Results}}, "
+                f"got {type(results).__name__}."
+            )
+        if len(results) == 0:
+            raise InvalidDesignError(
+                "results is empty; nothing to compare."
+            )
+
+        names = list(results.keys())
+        scalar: list[Results] = []
+        for name, entry in results.items():
+            res = entry.results if isinstance(entry, PipelineResult) else entry
+            if not isinstance(res, Results):
+                raise InvalidDesignError(
+                    f"Experiment '{name}' must be a PipelineResult or "
+                    f"Results, got {type(entry).__name__}."
+                )
+            if res.ate is None or res.effects is not None:
+                raise InvalidDesignError(
+                    f"Experiment '{name}' is not in scalar mode (ate must "
+                    f"be set, effects must be None). Multi-effect/subgroup "
+                    f"comparison is deferred to v2."
+                )
+            if res.p_value is None or not isinstance(res.p_value, (int, float)):
+                raise InvalidDesignError(
+                    f"Experiment '{name}' has no scalar p_value; run an "
+                    f"inference that produces one before comparing."
+                )
+            scalar.append(res)
+
+        corrected = self._mtc.correct(scalar)
+        corrected_results = dict(zip(names, corrected))
+        table = self._build_table(names, scalar, corrected)
+
+        return ComparisonResult(
+            corrected_results=corrected_results,
+            correction=self.correction,
+            alpha=self.alpha,
+            table=table,
+        )
+
+    def _build_table(
+        self,
+        names: list[str],
+        scalar: list[Results],
+        corrected: list[Results],
+    ) -> pd.DataFrame:
+        """Assemble the per-experiment comparison table."""
+        rows = []
+        for name, orig, corr in zip(names, scalar, corrected):
+            ci = orig.ci
+            rows.append(
+                {
+                    "experiment": name,
+                    "ate": orig.ate,
+                    "se": orig.se,
+                    "ci_lower": ci[0] if ci is not None else None,
+                    "ci_upper": ci[1] if ci is not None else None,
+                    "p_value": orig.p_value,
+                    "p_value_corrected": corr.p_value,
+                    "significant": bool(corr.p_value < self.alpha),
+                }
+            )
+        return pd.DataFrame(
+            rows,
+            columns=[
+                "experiment",
+                "ate",
+                "se",
+                "ci_lower",
+                "ci_upper",
+                "p_value",
+                "p_value_corrected",
+                "significant",
+            ],
         )

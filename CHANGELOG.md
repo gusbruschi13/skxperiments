@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 6: Pipeline and comparison
+
+- **`ExperimentPipeline`** (`skxperiments.pipeline`): composes an inference
+  procedure (which already wraps an estimator) with a set of diagnostics
+  and runs them against a single `Assignment`. The design travels with the
+  assignment (`assignment.design_`), so neither design nor estimator is a
+  separate argument. Diagnostics run best-effort (one raising a
+  `SkxperimentsError` is recorded as a warning and skipped); a flagged
+  diagnostic is surfaced but does not stop estimation unless
+  `raise_on_flag=True`. Default diagnostics: `[SRMTest()]`. Returns a
+  `PipelineResult` bundling the inference `Results`, a merged
+  `DiagnosticsReport`, and per-diagnostic results.
+- **`ExperimentComparison`** (`skxperiments.pipeline`): compares several
+  independent experiments by collecting each scalar ATE/p-value and
+  applying `MultipleTestingCorrection` across the family. Accepts a dict
+  of `PipelineResult` or scalar `Results`. Returns a `ComparisonResult`
+  with the corrected `Results` per experiment and a comparison table
+  (ATE, SE, CI, original/corrected p-value, significance) ready for the
+  Phase 7 forest plot. Multi-effect/subgroup comparison is deferred to v2.
+
 ### Added — Phase 5: Diagnostics
 
 - **`SRMTest`** (`skxperiments.diagnostics.srm`): Sample Ratio Mismatch
@@ -141,6 +161,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to revisit, and v2 plans. Organized by phase with What / Why deferred /
   Trigger structure. Linked from `README.md`.
 
+### Tests — Phase 6
+
+- 33 tests across `tests/test_pipeline.py` (16) and
+  `tests/test_comparison.py` (17): pipeline creation/validation, clean
+  and flagged runs, `raise_on_flag`, best-effort diagnostic errors, a
+  custom `BalanceReport` diagnostic, empty diagnostics, and the result
+  surface; comparison creation/validation, Bonferroni known values,
+  mixed `PipelineResult`/`Results` input, order preservation,
+  multi-effect and missing-p-value rejection, and the result surface.
+
 ### Tests — Phase 5
 
 - 61 tests across `tests/diagnostics/`: 23 for `SRMTest` (creation/
@@ -202,7 +232,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 
-- Phase 6: `ExperimentPipeline` and `ExperimentComparison`.
 - Phase 7: visualization and HTML reporting.
 
 `SequentialTest` (mSPRT, always-valid intervals), originally penciled in as

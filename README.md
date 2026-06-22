@@ -13,8 +13,8 @@ statistical models come second.
 ## Status
 
 Active development. Phases 0–3 complete; Phase 4 complete (4.1–4.4; sequential
-testing deferred to v2); Phase 5 (diagnostics) complete; Phases 6–7 planned.
-See [Project status](#project-status) below for details.
+testing deferred to v2); Phases 5 (diagnostics) and 6 (pipeline) complete;
+Phase 7 planned. See [Project status](#project-status) below for details.
 
 ## Installation
 
@@ -85,10 +85,10 @@ discovery rate when reporting multiple effects, wrap the result in
 | 3 | Estimators (DIM, BlockedDIM, Factorial, Lin, CUPED) | ✓ Complete |
 | 4 | Inference (RandomizationTest, MultipleTestingCorrection, NeymanCI, BootstrapCI) | ✓ Complete (4.1–4.4; sequential → v2) |
 | 5 | Diagnostics (SRMTest, AATest, BalanceReport) | ✓ Complete |
-| 6 | Pipeline composition | Planned |
+| 6 | Pipeline (ExperimentPipeline, ExperimentComparison) | ✓ Complete |
 | 7 | Visualization and reporting | Planned |
 
-Test coverage: 655 tests, all passing on CI.
+Test coverage: 688 tests, all passing on CI.
 
 See [`ROADMAP.md`](ROADMAP.md) for deferred features and v2 plans, and `CHANGELOG.md` for the
 full history of changes.
@@ -151,13 +151,17 @@ intervals come from inference classes in `skxperiments.inference`.
 
 Each returns a dedicated result with `to_diagnostics_report()` for pipeline aggregation.
 
+### Pipeline (`skxperiments.pipeline`)
+
+- **`ExperimentPipeline`** — Composes an inference (with its estimator) and diagnostics,
+  runs them on an `Assignment`, and bundles the result. Runs `SRMTest` automatically;
+  diagnostics are best-effort and flags are surfaced without halting (opt-in
+  `raise_on_flag`).
+- **`ExperimentComparison`** — Compares independent experiments, applying
+  `MultipleTestingCorrection` across the family. Returns a comparison table ready for the
+  Phase 7 forest plot. Subgroup comparison is deferred to v2.
+
 ## What's coming
-
-### Phase 6 — Pipeline
-
-`ExperimentPipeline` composes design + estimator + inference with automatic SRM checking.
-`ExperimentComparison` aggregates multiple pipelines for forest plots and joint multiple-testing
-correction.
 
 ### Phase 7 — Reporting
 

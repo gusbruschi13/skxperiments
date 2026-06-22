@@ -230,14 +230,16 @@ Items are grouped by phase. Each item lists:
 
 ### Subgroup analysis in `ExperimentComparison`
 
-- **What**: `ExperimentComparison` v1 will compare ATEs across
-  independent experiments. Subgroup analysis (effects within slices of
-  one experiment) is not in scope.
+- **What**: `ExperimentComparison` (shipped in Phase 6) compares scalar
+  ATEs across independent experiments and rejects multi-effect results.
+  Subgroup analysis (effects within slices of one experiment) is not in
+  scope.
 - **Why deferred**: Subgroup analysis raises multiple-testing issues that
   interact with `MultipleTestingCorrection` and need careful API
   thought. Independent-experiment comparison is the simpler case.
-- **Trigger**: After v1 of `ExperimentComparison` ships and users start
-  asking for subgroup support.
+- **Trigger**: Now that `ExperimentComparison` v1 has shipped, revisit
+  when users ask for subgroup support — likely a dedicated entry point
+  that takes one experiment plus a subgroup column.
 
 ---
 
