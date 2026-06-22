@@ -4,16 +4,42 @@ build-backend = "hatchling.build"
 
 [project]
 name = "skxperiments"
-version = "0.1.0-dev"
+version = "0.1.0.dev0"
 description = "Randomization-based experimental design and causal inference, sklearn-style."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
+authors = [
+    { name = "Gustavo Bruschi", email = "gustavo.bruschi@riachuelo.com.br" },
+]
+keywords = [
+    "experiments",
+    "ab-testing",
+    "causal-inference",
+    "design-of-experiments",
+    "randomization",
+    "potential-outcomes",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "numpy",
     "pandas",
     "scipy",
 ]
+
+[project.urls]
+Homepage = "https://github.com/gusbruschi13/skxperiments"
+Repository = "https://github.com/gusbruschi13/skxperiments"
+Issues = "https://github.com/gusbruschi13/skxperiments/issues"
 
 [project.optional-dependencies]
 viz = [
