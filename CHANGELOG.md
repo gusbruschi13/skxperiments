@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Packaging
+
+- Published `0.1.0.dev0` to PyPI as a developmental pre-release
+  (`pip install --pre skxperiments`; the `viz` extra adds matplotlib).
+- Added packaging metadata (authors, keywords, classifiers, project URLs)
+  and `.github/workflows/publish.yml` for trusted publishing (OIDC) on a
+  published GitHub Release. Release flow documented in `RELEASING.md`.
+
 ### Added — Phase 7: Visualization and reporting
 
 - **Plots** (`skxperiments.reporting.plots`): `plot_balance`, `plot_srm`,
