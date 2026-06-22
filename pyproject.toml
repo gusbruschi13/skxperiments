@@ -28,6 +28,8 @@ dev = [
     "black",
     "mypy",
     "matplotlib",
+    "nbmake",
+    "ipykernel",
 ]
 
 [tool.pytest.ini_options]
