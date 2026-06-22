@@ -245,6 +245,16 @@ Items are grouped by phase. Each item lists:
 
 ## Reporting (Phase 7)
 
+### Plotly backend
+
+- **What**: v1 plots use matplotlib only (returning an `Axes`).
+- **Why deferred**: A second backend doubles the surface (a `backend`
+  parameter on every `plot_*`, parallel rendering paths, and two
+  import-guards) for interactivity most static-report use cases don't
+  need.
+- **Trigger**: Demand for interactive/HTML-native figures, likely paired
+  with the interactive-dashboards item below.
+
 ### Interactive dashboards
 
 - **What**: v1 of `reporting` produces static HTML reports.

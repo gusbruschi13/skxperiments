@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 7: Visualization and reporting
+
+- **Plots** (`skxperiments.reporting.plots`): `plot_balance`, `plot_srm`,
+  `plot_null_distribution` (diagnostic) and `plot_effect`, `plot_forest`,
+  `plot_interaction`, `plot_power_curve` (result). Each accepts an
+  optional `ax` and returns the `matplotlib.axes.Axes` it drew on.
+- **`ExperimentReport`** (`skxperiments.reporting.summary`): renders a
+  `PipelineResult` as a self-contained static HTML page — results table,
+  diagnostics summary, and the relevant plots embedded inline as base64
+  PNGs. No template engine. `include_plots=False` produces the page
+  without matplotlib. `to_html()` / `save(path)`.
+- **Optional `matplotlib` dependency**: added a `viz` extra
+  (`pip install skxperiments[viz]`) and included matplotlib in `dev`.
+  Plotting is imported lazily; calling a plot without matplotlib raises a
+  clear `ImportError` pointing at the extra. Importing the package, or
+  building a report with `include_plots=False`, needs no optional
+  dependency.
+
 ### Added — Phase 6: Pipeline and comparison
 
 - **`ExperimentPipeline`** (`skxperiments.pipeline`): composes an inference
@@ -161,6 +179,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to revisit, and v2 plans. Organized by phase with What / Why deferred /
   Trigger structure. Linked from `README.md`.
 
+### Tests — Phase 7
+
+- 32 tests across `tests/reporting/`: 8 for the diagnostic plots, 14 for
+  the result plots, and 10 for `ExperimentReport`. All run headless (Agg
+  backend) and assert on figure artefacts (tick labels, bar/line counts,
+  histogram bins) and HTML substrings rather than pixels; the
+  optional-dependency guard is exercised by monkeypatching matplotlib
+  out of `sys.modules`.
+
 ### Tests — Phase 6
 
 - 33 tests across `tests/test_pipeline.py` (16) and
@@ -230,14 +257,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   contract and snapshot tests pinning the `DesignEstimatorMismatch` message format
   after the `_check_assignment_type` refactor.
 
-### Planned
+### Status
 
-- Phase 7: visualization and HTML reporting.
+The v1 feature set (Phases 0–7) is complete: design, estimation,
+randomization/finite-population/superpopulation inference, multiple-testing
+correction, diagnostics, pipeline composition, and reporting.
 
-`SequentialTest` (mSPRT, always-valid intervals), originally penciled in as
-Phase 4.5, is **deferred to v2** — decided at the end of Phase 4.4 because
-sequential inference needs distributional assumptions and a streaming API
-that don't fit the finite-population, one-shot core. See `ROADMAP.md`.
+Deferred to v2 (see `ROADMAP.md`): `SequentialTest` (mSPRT/always-valid),
+Benjamini-Yekutieli correction, CUPED/Lin variance in `NeymanCI`,
+studentized bootstrap, block-resampling bootstrap, subgroup comparison,
+a plotly backend, and interactive dashboards.
 
 ## [0.1.0-dev] - 2026-05-31
 
