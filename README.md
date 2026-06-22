@@ -12,9 +12,8 @@ statistical models come second.
 
 ## Status
 
-Active development. Phases 0–3 complete; Phase 4 complete (4.1–4.4; sequential
-testing deferred to v2); Phases 5 (diagnostics) and 6 (pipeline) complete;
-Phase 7 planned. See [Project status](#project-status) below for details.
+The v1 feature set is complete: Phases 0–7 are done (sequential testing is
+deferred to v2). See [Project status](#project-status) below for details.
 
 ## Installation
 
@@ -86,9 +85,9 @@ discovery rate when reporting multiple effects, wrap the result in
 | 4 | Inference (RandomizationTest, MultipleTestingCorrection, NeymanCI, BootstrapCI) | ✓ Complete (4.1–4.4; sequential → v2) |
 | 5 | Diagnostics (SRMTest, AATest, BalanceReport) | ✓ Complete |
 | 6 | Pipeline (ExperimentPipeline, ExperimentComparison) | ✓ Complete |
-| 7 | Visualization and reporting | Planned |
+| 7 | Visualization and reporting (plots, ExperimentReport) | ✓ Complete |
 
-Test coverage: 688 tests, all passing on CI.
+Test coverage: 720 tests, all passing on CI.
 
 See [`ROADMAP.md`](ROADMAP.md) for deferred features and v2 plans, and `CHANGELOG.md` for the
 full history of changes.
@@ -159,15 +158,25 @@ Each returns a dedicated result with `to_diagnostics_report()` for pipeline aggr
   `raise_on_flag`).
 - **`ExperimentComparison`** — Compares independent experiments, applying
   `MultipleTestingCorrection` across the family. Returns a comparison table ready for the
-  Phase 7 forest plot. Subgroup comparison is deferred to v2.
+  forest plot. Subgroup comparison is deferred to v2.
 
-## What's coming
+### Reporting (`skxperiments.reporting`)
 
-### Phase 7 — Reporting
+Requires the optional `viz` extra (`pip install skxperiments[viz]`).
 
-Plots (`plot_balance`, `plot_forest`, `plot_effect`, `plot_interaction`, `plot_power_curve`,
-`plot_null_distribution`, `plot_srm`) and HTML reports (`ExperimentReport`). `matplotlib` and
-`plotly` are optional dependencies.
+- **Plots** — diagnostic (`plot_balance`, `plot_srm`, `plot_null_distribution`) and result
+  (`plot_effect`, `plot_forest`, `plot_interaction`, `plot_power_curve`). Each returns a
+  matplotlib `Axes` and accepts an optional `ax`.
+- **`ExperimentReport`** — Renders a `PipelineResult` as a self-contained static HTML page
+  (results table, diagnostics, embedded plots). `include_plots=False` skips the optional
+  dependency.
+
+## What's next (v2)
+
+The v1 feature set is complete. Deferred items live in [`ROADMAP.md`](ROADMAP.md):
+`SequentialTest` (mSPRT/always-valid), Benjamini-Yekutieli correction, covariate-adjusted
+variance in `NeymanCI`, studentized and block-resampling bootstrap, subgroup comparison,
+a plotly backend, and interactive dashboards.
 
 ## Contributing
 

@@ -16,8 +16,10 @@ from skxperiments.reporting.plots import (
     plot_power_curve,
     plot_srm,
 )
+from skxperiments.reporting.summary import ExperimentReport
 
 __all__ = [
+    "ExperimentReport",
     "plot_balance",
     "plot_effect",
     "plot_forest",
