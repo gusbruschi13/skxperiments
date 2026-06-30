@@ -137,8 +137,8 @@ def power_analysis(
     >>> result = power_analysis(
     ...     mde=0.2, power=0.8, std=1.0, alpha=0.05
     ... )
-    >>> result.n_total  # close to 394 by classical formula
-    394
+    >>> result.n_total  # total across both arms (about 393 per arm)
+    785
     """
     # --- Validate which target to solve for -----------------------
     targets_none = sum(x is None for x in (n, mde, power))

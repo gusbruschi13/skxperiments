@@ -321,6 +321,53 @@ Items are grouped by phase. Each item lists:
   replace `paths-ignore` with a "skip job" pattern that returns success
   immediately for ignored paths.
 
+### Cluster and geo randomization, and interference (SUTVA violations)
+- **What**: v1 assumes SUTVA and unit-level randomization. Cluster/geo designs
+  and interference-aware estimators are not covered.
+- **Why deferred**: needs cluster-level assignment, cluster-robust variance, and
+  an interference model; a sizable design + inference addition.
+- **Trigger**: marketplace/network experiments with spillover (Kohavi et al.).
+
+### Delta method for ratio metrics
+- **What**: correct variance for ratio metrics (e.g. clicks per page) when the
+  randomization unit differs from the analysis unit (IID violated).
+- **Why deferred**: needs a numerator/denominator metric abstraction beyond the
+  current scalar-outcome estimators.
+- **Trigger**: online experiments with user-level randomization (Deng, Kohavi).
+
+### Fractional factorial designs and screening
+- **What**: FactorialDesign covers the full 2^K. Fractional designs (2^(k-p))
+  test many factors in a fraction of the runs by aliasing high-order terms.
+- **Why deferred**: needs an aliasing/resolution framework and a different
+  estimator contract.
+- **Trigger**: when full-factorial run counts become prohibitive (Box, Hunter
+  & Hunter).
+
+### Noncompliance: ITT vs. ETT (CACE/LATE)
+- **What**: ITT (analyze as assigned) is already what the library does.
+  Estimators for the effect on compliers (CACE/LATE via instrumental
+  variables) when assigned != treated are not.
+- **Why deferred**: needs an explicit compliance/instrument contract and IV.
+- **Trigger**: experiments with imperfect take-up (ignored emails, low adoption).
+
+### Heterogeneous effects (HTE/CATE) and subgroups
+- **What**: v1 estimates the ATE. Subgroup ATEs (see ExperimentComparison) and
+  CATE estimators (meta-learners, causal forests) are out.
+- **Why deferred**: subgroup analysis interacts with multiple testing; full CATE
+  is causal ML, a different layer from the design-first core.
+- **Trigger**: demand for personalization; start with subgroup ATE before CATE.
+
+## Observational causal inference (possible new direction)
+
+### Observational methods (scope decision, not a v1 gap)
+- **What**: backdoor/frontdoor identification, mediation (NDE/NIE), propensity
+  matching, regression discontinuity (RDD), Rosenbaum sensitivity analysis.
+- **Why deferred**: these are for when you cannot randomize. They are a different
+  paradigm from the "design dictates inference" core; adding them would turn
+  skxperiments into a general causal-inference toolkit (cf. DoWhy/EconML).
+- **Trigger**: a deliberate decision to broaden the mission. Until then, they
+  stay in study notes, not the codebase.
+
 ---
 
 ## How to use this document
