@@ -75,19 +75,43 @@ discovery rate when reporting multiple effects, wrap the result in
 
 ## Documentation and tutorials
 
-Learning-path notebooks (bilingual, Portuguese and English) live in
-[`examples/for_starters/`](examples/for_starters/). Conceptual docs are in
-[`docs/`](docs/README.md): a five-chapter **theory series** (foundations,
-designs, estimation, inference, diagnostics) with derivations and worked
-examples, plus a glossary and a "how to choose" guide. Both languages:
-[English](docs/en/index.md) and [Português](docs/pt-br/index.md).
+Everything below is bilingual (English and Português) and runs in CI via
+`nbmake`, so it stays in sync with the library.
+
+**New here? Start with the notebooks** ([`examples/`](examples/README.md)). Two
+tracks, each seeded and reproducible:
+
+**`for_starters/`** teaches one concept per notebook, from why-randomize to a
+full pipeline. Begin with
+[01. Your first experiment](examples/for_starters/en/01_first_experiment.ipynb),
+then `02` inference three ways, `03` reducing variance, `04` balance and
+rerandomization, `05` blocking, `06` factorial, `07` many tests, `08`
+diagnostics, `09` putting it together.
+
+**`use_cases/`** applies the library end-to-end to a business problem per sector,
+from design to decision:
+
+| Case | Sector | What it shows |
+|---|---|---|
+| [01. Checkout](examples/use_cases/en/01_ecommerce_checkout.ipynb) | e-commerce | power, CRD, SRM, CUPED, Neyman vs. bootstrap |
+| [02. Fashion stores](examples/use_cases/en/02_fashion_stores_blocking.ipynb) | retail | blocking on heterogeneous stores |
+| [03. Fintech campaign](examples/use_cases/en/03_fintech_factorial.ipynb) | fintech | 2x2 factorial, main effects and interaction |
+| [04. Distribution centers](examples/use_cases/en/04_logistics_rerandomization.ipynb) | logistics | re-randomization with few units |
+| [05. Streaming](examples/use_cases/en/05_streaming_many_metrics.ipynb) | streaming | many metrics, multiple-testing, pipeline and report |
+
+Portuguese versions of every notebook are in the matching `pt-br/` folders.
+
+**Concepts and math:** a five-chapter **theory series** (foundations, designs,
+estimation, inference, diagnostics) with derivations and worked examples, plus a
+glossary and a "how to choose" guide, in [`docs/`](docs/README.md)
+([English](docs/en/index.md) and [Português](docs/pt-br/index.md)).
 
 ## Design philosophy
 
 1. **The assignment mechanism is primary**, not the statistical model.
 2. **API in scikit-learn style**: parameters in `__init__`, data in `fit()`, learned attributes
    end with `_`.
-3. **`Assignment` is the contract** between designs and estimators — estimators receive
+3. **`Assignment` is the contract** between designs and estimators: estimators receive
    `Assignment` objects, not loose DataFrames.
 4. **Randomization-based inference is the default**; classical t-tests are not.
 5. **Finite-population vs. superpopulation inference are distinguished explicitly.**
@@ -116,43 +140,43 @@ full history of changes.
 
 ### Designs (`skxperiments.design`)
 
-- **`CRD`** — Completely randomized design.
-- **`BlockedCRD`** — Independent randomization within blocks.
-- **`ReRandomizedCRD`** — Mahalanobis acceptance criterion with cached covariance matrix; loop with `max_attempts`.
-- **`FactorialDesign`** — 2^K factorial design with equal cell sizes; little-endian cell encoding.
-- **`check_balance(assignment, covariates)`** — Standardized mean differences (SMD), pooled std with `ddof=1`.
-- **`power_analysis(...)`** — Sample size, MDE, or power for two-sample mean comparisons.
+- **`CRD`**: Completely randomized design.
+- **`BlockedCRD`**: Independent randomization within blocks.
+- **`ReRandomizedCRD`**: Mahalanobis acceptance criterion with cached covariance matrix; loop with `max_attempts`.
+- **`FactorialDesign`**: 2^K factorial design with equal cell sizes; little-endian cell encoding.
+- **`check_balance(assignment, covariates)`**: Standardized mean differences (SMD), pooled std with `ddof=1`.
+- **`power_analysis(...)`**: Sample size, MDE, or power for two-sample mean comparisons.
 
 ### Estimators (`skxperiments.estimators`)
 
-- **`DifferenceInMeans`** — Simple ATE for `CRDAssignment`.
-- **`BlockedDifferenceInMeans`** — Size-weighted ATE for `BlockedAssignment`.
-- **`FactorialEstimator`** — All 2^K − 1 effects (main effects and interactions of all orders) for `FactorialAssignment`. Returns `Results` in multi-effect mode.
-- **`LinEstimator`** — Covariate-adjusted ATE via OLS with treatment-covariate interaction (Lin 2013).
-- **`CUPED`** — Variance reduction with a pre-experiment covariate (Deng et al. 2013).
+- **`DifferenceInMeans`**: Simple ATE for `CRDAssignment`.
+- **`BlockedDifferenceInMeans`**: Size-weighted ATE for `BlockedAssignment`.
+- **`FactorialEstimator`**: All 2^K − 1 effects (main effects and interactions of all orders) for `FactorialAssignment`. Returns `Results` in multi-effect mode.
+- **`LinEstimator`**: Covariate-adjusted ATE via OLS with treatment-covariate interaction (Lin 2013).
+- **`CUPED`**: Variance reduction with a pre-experiment covariate (Deng et al. 2013).
 
 All estimators return `Results` with point estimates only; standard errors and confidence
 intervals come from inference classes in `skxperiments.inference`.
 
 ### Inference (`skxperiments.inference`)
 
-- **`RandomizationTest`** — Fisher's sharp null hypothesis test via Monte Carlo permutations.
+- **`RandomizationTest`**: Fisher's sharp null hypothesis test via Monte Carlo permutations.
   Uses `Assignment.draw()` to respect the original randomization mechanism (including
   rerandomization Mahalanobis criterion and within-block proportions). P-value via the
   Phipson & Smyth (2010) continuity correction. Three alternatives: `"two-sided"`,
   `"greater"`, `"less"`. Works with `DifferenceInMeans`, `BlockedDifferenceInMeans`,
   `LinEstimator`, and `CUPED`.
-- **`MultipleTestingCorrection`** — Bonferroni, Holm (FWER) and Benjamini-Hochberg (FDR)
+- **`MultipleTestingCorrection`**: Bonferroni, Holm (FWER) and Benjamini-Hochberg (FDR)
   correction over a family of p-values. Accepts a multi-effect `Results` (typical from
   `FactorialEstimator` after inference) or a list of scalar `Results` (for comparing
   independent experiments). Clips corrected p-values to `[0, 1]`; preserves originals
   in `Results.extra["original_p_values"]`. Default method is Holm.
-- **`NeymanCI`** — Neyman variance-based two-sided Wald confidence interval and p-value
+- **`NeymanCI`**: Neyman variance-based two-sided Wald confidence interval and p-value
   for finite-population inference. Conservative variance for `CRDAssignment` (including
   rerandomized) and stratified variance for `BlockedAssignment`, consistent with the
   size-weighted ATE of `BlockedDifferenceInMeans`. Wraps `DifferenceInMeans` or
   `BlockedDifferenceInMeans`; rejects superpopulation mode (use `BootstrapCI`).
-- **`BootstrapCI`** — Bootstrap confidence interval (percentile or BCa) for
+- **`BootstrapCI`**: Bootstrap confidence interval (percentile or BCa) for
   superpopulation inference. Resamples units within each arm (within each
   block-by-arm stratum for blocked designs) and refits the estimator, so it
   works with any scalar estimator (`DifferenceInMeans`, `BlockedDifferenceInMeans`,
@@ -160,11 +184,11 @@ intervals come from inference classes in `skxperiments.inference`.
 
 ### Diagnostics (`skxperiments.diagnostics`)
 
-- **`SRMTest`** — Sample Ratio Mismatch via chi-squared: observed vs. intended arm/cell
+- **`SRMTest`**: Sample Ratio Mismatch via chi-squared: observed vs. intended arm/cell
   allocation, flagged below a threshold (default 0.001). Two-arm and factorial.
-- **`BalanceReport`** — Standardized mean differences (SMD) per covariate, flagging
+- **`BalanceReport`**: Standardized mean differences (SMD) per covariate, flagging
   `|SMD| > 0.1`. Consumes `check_balance`; `to_dataframe()` feeds the Phase 7 Love plot.
-- **`AATest`** — A/A calibration: re-randomizes a design on fixed data, runs a wrapped
+- **`AATest`**: A/A calibration: re-randomizes a design on fixed data, runs a wrapped
   inference, and checks the false-positive rate (exact binomial test) and p-value
   uniformity (KS).
 
@@ -172,11 +196,11 @@ Each returns a dedicated result with `to_diagnostics_report()` for pipeline aggr
 
 ### Pipeline (`skxperiments.pipeline`)
 
-- **`ExperimentPipeline`** — Composes an inference (with its estimator) and diagnostics,
+- **`ExperimentPipeline`**: Composes an inference (with its estimator) and diagnostics,
   runs them on an `Assignment`, and bundles the result. Runs `SRMTest` automatically;
   diagnostics are best-effort and flags are surfaced without halting (opt-in
   `raise_on_flag`).
-- **`ExperimentComparison`** — Compares independent experiments, applying
+- **`ExperimentComparison`**: Compares independent experiments, applying
   `MultipleTestingCorrection` across the family. Returns a comparison table ready for the
   forest plot. Subgroup comparison is deferred to v2.
 
@@ -184,10 +208,10 @@ Each returns a dedicated result with `to_diagnostics_report()` for pipeline aggr
 
 Requires the optional `viz` extra (`pip install skxperiments[viz]`).
 
-- **Plots** — diagnostic (`plot_balance`, `plot_srm`, `plot_null_distribution`) and result
+- **Plots**: diagnostic (`plot_balance`, `plot_srm`, `plot_null_distribution`) and result
   (`plot_effect`, `plot_forest`, `plot_interaction`, `plot_power_curve`). Each returns a
   matplotlib `Axes` and accepts an optional `ax`.
-- **`ExperimentReport`** — Renders a `PipelineResult` as a self-contained static HTML page
+- **`ExperimentReport`**: Renders a `PipelineResult` as a self-contained static HTML page
   (results table, diagnostics, embedded plots). `include_plots=False` skips the optional
   dependency.
 
@@ -201,7 +225,7 @@ a plotly backend, and interactive dashboards.
 ## Contributing
 
 Contributions are welcome. Please open an issue to discuss substantial changes before submitting
-a pull request. The architecture has documented design decisions that should be respected — see
+a pull request. The architecture has documented design decisions that should be respected, see
 [`ROADMAP.md`](ROADMAP.md), the project notes in `CHANGELOG.md`, and the docstrings of base
 classes (`BaseAssignment`, `BaseEstimator`, `Results`) for the contracts new code must follow.
 
