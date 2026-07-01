@@ -10,8 +10,9 @@ para quem está começando em experimentação, não só uma referência.
 > **Status:** começamos com Markdown e notebooks. A intenção é evoluir para um
 > site (Quarto ou mkdocs) depois; o conteúdo já é portável para lá.
 
-**Guias:** [como escolher](escolhendo.md) (design, estimador, inferência) e
-[glossário](glossario.md).
+**Guias:** [como escolher](escolhendo.md) (design, estimador, inferência),
+[glossário](glossario.md) e a [série de teoria](teoria/01-fundamentos.md)
+(conceitos e matemática).
 
 ---
 
@@ -53,6 +54,23 @@ CI (nbmake). Uma trilha com **dados reais** virá depois.
 | 09 | Juntando tudo | `power_analysis`, `ExperimentPipeline`, `ExperimentReport` |
 
 *(Os notebooks 02 a 09 entram nos próximos passos.)*
+
+---
+
+## Série de teoria
+
+Cinco capítulos que constroem os conceitos e a matemática por trás da
+biblioteca, com derivações e exemplos numéricos trabalhados. Eles acompanham os
+notebooks acima: o notebook mostra a API, a teoria explica o porquê. Cada ideia
+termina com um bloco "Na biblioteca" que amarra a matemática ao código.
+
+| Capítulo | Cobre |
+|---|---|
+| [I. Fundamentos](teoria/01-fundamentos.md) | potential outcomes, estimandos (SATE/PATE), por que randomizar |
+| [II. Desenhos](teoria/02-desenhos.md) | CRD, blocagem, rerandomização (Mahalanobis), fatorial 2^K |
+| [III. Estimação](teoria/03-estimacao.md) | diferença de médias, estratificado, Lin, CUPED, contrastes fatoriais |
+| [IV. Inferência](teoria/04-inferencia.md) | teste de randomização, Neyman, bootstrap, múltiplos testes, poder |
+| [V. Diagnósticos](teoria/05-diagnosticos.md) | equilíbrio (SMD), SRM, A/A, pipeline e relatório |
 
 ---
 

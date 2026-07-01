@@ -76,8 +76,11 @@ discovery rate when reporting multiple effects, wrap the result in
 ## Documentation and tutorials
 
 Learning-path notebooks (bilingual, Portuguese and English) live in
-[`examples/for_starters/`](examples/for_starters/); conceptual docs (a glossary
-and a "how to choose" guide) are in [`docs/`](docs/README.md).
+[`examples/for_starters/`](examples/for_starters/). Conceptual docs are in
+[`docs/`](docs/README.md): a five-chapter **theory series** (foundations,
+designs, estimation, inference, diagnostics) with derivations and worked
+examples, plus a glossary and a "how to choose" guide. Both languages:
+[English](docs/en/index.md) and [Português](docs/pt-br/index.md).
 
 ## Design philosophy
 
