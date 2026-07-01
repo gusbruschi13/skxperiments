@@ -10,9 +10,13 @@ Notebooks que ensinam o `skxperiments` na prática. Estão organizados em
 
 - **`for_starters/`** — beginner track with simulated data, from "why
   randomize" to a full pipeline and report (notebooks 00 to 09). Didactic
-  and self-contained.
-- *(coming) real-data case studies* — notebooks applying the library to
-  real datasets. *(em breve) estudos de caso com dados reais.*
+  and self-contained. Trilha inicial com dados simulados.
+- **`use_cases/`** — applied, decision-oriented case studies across sectors
+  (e-commerce, fashion retail, fintech, logistics, streaming). Each notebook is
+  end-to-end: a business problem, the design choice, diagnostics, inference, and
+  a decision. Uses versioned, synthetic-but-realistic datasets with a known
+  ground truth (see [`use_cases/README.md`](use_cases/README.md)). Trilha
+  aplicada, orientada a decisão, com casos por setor.
 
 ## How to run / Como rodar
 
@@ -40,5 +44,12 @@ reproduzíveis.
 `03` reducing variance, `04` balance and rerandomization, `05` blocking,
 `06` factorial, `07` many tests, `08` diagnostics, `09` putting it together.
 
-See the conceptual docs in [`../docs/`](../docs/README.md) for the glossary
-and the "how to choose" guide.
+## Case studies / Estudos de caso (use_cases)
+
+`01` e-commerce checkout (power, CRD, SRM, CUPED, Neyman vs. bootstrap),
+`02` fashion stores (blocking), `03` fintech campaign (2x2 factorial),
+`04` distribution centers (re-randomization), `05` streaming (many metrics and
+multiple-testing correction).
+
+See the conceptual docs in [`../docs/`](../docs/README.md) for the glossary,
+the "how to choose" guide, and the theory series.
